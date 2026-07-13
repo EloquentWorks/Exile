@@ -24,10 +24,10 @@ return new class extends Migration
             // Create nullable polymorphic relationship columns for the 'subject' and 'actor' entities
             $table->nullableMorphs('subject');
             $table->nullableMorphs('actor');
-            
+
             // Create a nullable JSON column for storing additional context related to the action
             $table->json('context')->nullable();
-            
+
             // Create a nullable timestamp column for the action's occurrence time
             $table->timestamps();
         });

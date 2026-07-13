@@ -35,7 +35,7 @@ return new class extends Migration
 
             // Create an unsigned big integer column for the size of the evidence file in bytes, which can be nullable
             $table->unsignedBigInteger('size_bytes')->nullable();
-            
+
             // Create a JSON column for storing additional metadata related to the evidence, which can be nullable
             $table->json('metadata')->nullable();
 

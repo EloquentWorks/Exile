@@ -17,20 +17,20 @@ return new class extends Migration
         Schema::create(config('exile.tables.appeals', 'exile_appeals'), function (Blueprint $table): void {
             // Create an auto-incrementing primary key column named 'id'
             $table->id();
-            
+
             // Create a foreign key column for the 'ban_id' that references the 'id' column in the bans table, with cascade on delete
             $table->foreignId('ban_id')->constrained(config('exile.tables.bans', 'exile_bans'))->cascadeOnDelete();
-            
+
             // Create polymorphic relationship columns for the 'appellant' entity
             $table->morphs('appellant');
-            
+
             // Create a string column for storing the status of the appeal with a default value of 'pending' and an index for efficient querying
             $table->string('status', 30)->default('pending')->index();
-            
+
             // Create a text column for storing the appeal message and a nullable text column for storing the response to the appeal
             $table->text('message');
             $table->text('response')->nullable();
-            
+
             // Create nullable polymorphic relationship columns for the 'reviewed_by' entity and a nullable timestamp column for when the appeal was reviewed
             $table->nullableMorphs('reviewed_by');
 
@@ -39,7 +39,7 @@ return new class extends Migration
 
             // Create a nullable timestamp column for when the appeal was created and updated
             $table->timestamps();
-            
+
             // Create a composite index on the 'ban_id' and 'status' columns for efficient querying of appeals by ban and status
             $table->index(['ban_id', 'status']);
         });

@@ -36,10 +36,10 @@ return new class extends Migration
             // Create timestamp columns for tracking the first and last time the device fingerprint was seen
             $table->timestamp('first_seen_at');
             $table->timestamp('last_seen_at');
-            
+
             // Create timestamp columns for tracking when the record was created and last updated
             $table->timestamps();
-            
+
             // Create a unique index on the combination of 'fingerprintable_type', 'fingerprintable_id', and 'fingerprint_hash' to ensure uniqueness of device fingerprints
             $table->unique(['fingerprintable_type', 'fingerprintable_id', 'fingerprint_hash'], 'exile_unique_device_fingerprint');
         });

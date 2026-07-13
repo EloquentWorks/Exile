@@ -32,7 +32,7 @@ return new class extends Migration
 
             // Create a nullable text column for storing the CIDR notation of the IP address
             $table->text('cidr')->nullable();
-            
+
             // Create a nullable char column for storing the hashed device identifier with a length of 64 characters and an index for efficient querying
             $table->char('device_hash', 64)->nullable()->index();
 

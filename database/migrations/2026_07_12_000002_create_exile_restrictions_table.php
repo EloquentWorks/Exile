@@ -20,7 +20,7 @@ return new class extends Migration
 
             // Create polymorphic relationship columns for the 'restrictable' entity
             $table->morphs('restrictable');
-            
+
             // Create a string column named 'type' with a maximum length of 40 characters and an index for efficient querying
             $table->string('type', 40)->index();
 
@@ -36,7 +36,7 @@ return new class extends Migration
             // Create nullable polymorphic relationship columns for the 'issued_by' and 'revoked_by' entities
             $table->nullableMorphs('issued_by');
             $table->nullableMorphs('revoked_by');
-            
+
             // Create nullable timestamp columns for the expiration and revocation of the restriction, with indexes for efficient querying
             $table->timestamp('expires_at')->nullable()->index();
             $table->timestamp('revoked_at')->nullable()->index();
@@ -44,7 +44,7 @@ return new class extends Migration
 
             // Create a nullable timestamp column for the last time the restriction was updated
             $table->timestamps();
-            
+
             // Create a composite index on the 'restrictable_type', 'restrictable_id', 'type', 'revoked_at', and 'expires_at' columns for efficient querying of active restrictions
             $table->index(['restrictable_type', 'restrictable_id', 'type', 'revoked_at', 'expires_at'], 'exile_active_restriction_index');
         });
