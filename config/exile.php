@@ -121,9 +121,9 @@ return [
     | Notifications
     |--------------------------------------------------------------------------
     |
-    | Exile can notify affected users when moderation actions are issued,
-    | revoked, expired, or appealed. Notification delivery is disabled by
-    | default so applications may configure their preferred channels first.
+    | Exile can notify affected users when account bans are issued,
+    | revoked, or expired. Appeal workflows dispatch lifecycle events that
+    | applications may listen to when custom notifications are required.
     |
     */
 
@@ -133,7 +133,6 @@ return [
         'issued' => true,
         'revoked' => true,
         'expired' => true,
-        'appeals' => true,
     ],
 
     /*

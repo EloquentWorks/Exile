@@ -195,6 +195,11 @@ final class EnforcementWriter
             throw new InvalidArgumentException('Strike points must be at least one.');
         }
 
+        // Resolve the expiration date for the strike, if provided, and validate it.
+        $expiresAt = $this->resolveStrikeExpiration(
+            $expiresAt
+        );
+
         // Validate the expiration date and category for the strike.
         $this->validateExpiration($expiresAt);
         $this->validateCategory($category);
@@ -384,6 +389,42 @@ final class EnforcementWriter
         if ($expiresAt !== null && $expiresAt <= now()) {
             throw new InvalidArgumentException('The expiration date must be in the future.');
         }
+    }
+
+    /**
+     * Resolve the strike expiration date.
+     *
+     * An explicitly supplied expiration date takes precedence over the
+     * configured default expiration period.
+     *
+     * @param  ?DateTimeInterface  $expiresAt  The explicitly supplied expiration date (optional).
+     * @return ?DateTimeInterface The resolved expiration date, or null if no expiration is configured.
+     */
+    private function resolveStrikeExpiration(
+        ?DateTimeInterface $expiresAt
+    ): ?DateTimeInterface {
+        // If an expiration date is explicitly provided, return it.
+        if ($expiresAt !== null) {
+            return $expiresAt;
+        }
+
+        // Retrieve the configured default expiration period for strikes in days.
+        $expireAfterDays = config(
+            'exile.strikes.expire_after_days'
+        );
+
+        // If the configured expiration period is not a valid positive integer, return null (no expiration).
+        if (
+            ! is_numeric($expireAfterDays)
+            || (int) $expireAfterDays < 1
+        ) {
+            return null;
+        }
+
+        // Calculate and return the expiration date by adding the configured number of days to the current date and time.
+        return now()->addDays(
+            (int) $expireAfterDays
+        );
     }
 
     /**

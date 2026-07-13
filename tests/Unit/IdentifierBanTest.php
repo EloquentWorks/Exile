@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use EloquentWorks\Exile\Enums\BanType;
 use EloquentWorks\Exile\Services\ExileManager;
 use EloquentWorks\Exile\Support\EnforcementContext;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -58,5 +59,31 @@ final class IdentifierBanTest extends TestCase
         self::assertTrue($first->is($second));
         self::assertSame('Work Laptop', $second->label);
         self::assertCount(1, $user->deviceFingerprints);
+    }
+
+    #[Test]
+    public function it_rejects_an_invalid_ip_address(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class
+        );
+
+        app(ExileManager::class)->banIp(
+            ipAddress: 'not-an-ip-address',
+            reason: 'Invalid IP'
+        );
+    }
+
+    #[Test]
+    public function it_rejects_an_invalid_cidr_range(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class
+        );
+
+        app(ExileManager::class)->banNetwork(
+            cidr: '203.0.113.0/999',
+            reason: 'Invalid CIDR'
+        );
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use EloquentWorks\Exile\Services\ExileManager;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -32,5 +33,37 @@ final class EvidenceTest extends TestCase
 
         self::assertTrue($manager->deleteEvidence($evidence));
         Storage::disk('local')->assertMissing($evidence->path);
+    }
+
+    #[Test]
+    public function it_rejects_evidence_that_exceeds_the_size_limit(): void
+    {
+        config()->set(
+            'exile.evidence.max_size_kilobytes',
+            1
+        );
+
+        $user = $this->user();
+
+        $ban = $user->ban(
+            reason: 'Evidence size test'
+        );
+
+        $this->expectException(
+            InvalidArgumentException::class
+        );
+
+        $this->expectExceptionMessage(
+            'Evidence files may not exceed 1 KB.'
+        );
+
+        app(ExileManager::class)->storeEvidence(
+            subject: $ban,
+            file: UploadedFile::fake()->create(
+                'too-large.txt',
+                2,
+                'text/plain'
+            )
+        );
     }
 }

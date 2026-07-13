@@ -6,11 +6,46 @@ use EloquentWorks\Exile\Enums\BanType;
 use EloquentWorks\Exile\Models\Ban;
 use EloquentWorks\Exile\Services\ExileManager;
 use EloquentWorks\Exile\Support\EnforcementContext;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 final class BanTest extends TestCase
 {
+    #[Test]
+    public function it_rejects_an_unconfigured_category(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class
+        );
+
+        $this->expectExceptionMessage(
+            'The supplied enforcement category is not configured.'
+        );
+
+        $this->user()->ban(
+            reason: 'Invalid category',
+            category: 'not-configured'
+        );
+    }
+
+    #[Test]
+    public function it_rejects_an_expiration_date_in_the_past(): void
+    {
+        $this->expectException(
+            InvalidArgumentException::class
+        );
+
+        $this->expectExceptionMessage(
+            'The expiration date must be in the future.'
+        );
+
+        $this->user()->ban(
+            reason: 'Invalid expiration',
+            expiresAt: now()->subMinute()
+        );
+    }
+
     #[Test]
     public function it_issues_and_resolves_an_account_ban(): void
     {

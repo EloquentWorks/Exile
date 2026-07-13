@@ -41,9 +41,6 @@ final class ExileServiceProvider extends ServiceProvider
      */
     public function boot(Router $router): void
     {
-        // Load the package's migrations from the specified directory
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-
         // Register middleware aliases for handling bans, restrictions, and shadow bans
         $router->aliasMiddleware((string) config('exile.middleware.ban_alias', 'exile'), EnsureNotBanned::class);
         $router->aliasMiddleware((string) config('exile.middleware.restriction_alias', 'exile.allowed'), EnsureActionAllowed::class);
