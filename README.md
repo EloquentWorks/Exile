@@ -22,7 +22,7 @@ $user->restrict(RestrictionType::Posting, 'Posting cooldown');
 
 | Package Version | PHP | Laravel / Illuminate |
 | --- | --- | --- |
-| Current | `^8.2` | `^11.15 \|\| ^12.0 \|\| ^13.0` |
+| Current | `^8.2` | `^12.0 \|\| ^13.0` |
 
 > Composer will automatically resolve compatible Laravel / Illuminate versions based on your project.
 
@@ -292,11 +292,23 @@ vendor/bin/pint --test
 
 ## Documentation
 
-Full docs are available in the [`docs`](docs) directory:
+Full documentation is available in the [`docs`](docs) directory:
 
-- [Architecture](docs/architecture.md)
+- [Installation](docs/installation.md)
 - [Configuration](docs/configuration.md)
+- [Architecture](docs/architecture.md)
+- [Bans](docs/bans.md)
+- [IP, Network, and Device Enforcement](docs/identifiers.md)
+- [Restrictions](docs/restrictions.md)
+- [Warnings, Strikes, and Escalation](docs/warnings-and-strikes.md)
+- [Appeals](docs/appeals.md)
+- [Evidence](docs/evidence.md)
+- [Middleware](docs/middleware.md)
+- [Events, Notifications, and Audit History](docs/events-notifications-and-audit.md)
+- [Commands and Scheduling](docs/commands-and-scheduling.md)
+- [Customization](docs/customization.md)
 - [Security](docs/security.md)
+- [Testing](docs/testing.md)
 
 ## Security
 
