@@ -18,35 +18,13 @@ $user->strike('Spam', points: 3);
 $user->restrict(RestrictionType::Posting, 'Posting cooldown');
 ```
 
-## Features
+## Supported Versions
 
-- Account-only bans
-- IP-only bans
-- Combined account and IP bans
-- CIDR network bans with IPv4 and IPv6 support
-- Device fingerprint bans without storing raw fingerprints
-- Combined account, device, and IP bans
-- Temporary and permanent enforcement
-- Public reasons and private moderator notes
-- Configurable ban categories
-- Moderator issuance and revocation tracking
-- Warnings with severity and acknowledgement
-- Strike points with automatic escalation
-- Login, posting, read-only, and shadow restrictions
-- Ban appeals with approval, denial, and withdrawal
-- Evidence attachments with configurable storage
-- Automatic audit history
-- Middleware and custom 403 responses
-- Lifecycle events and optional notifications
-- Expiration processing and retention pruning commands
-- Configurable models and table names
+| Package Version | PHP | Laravel / Illuminate |
+| --- | --- | --- |
+| Current | `^8.2` | `^11.15 \|\| ^12.0 \|\| ^13.0` |
 
-## Requirements
-
-- PHP 8.2+ for Laravel 11 or 12
-- PHP 8.3+ for Laravel 13
-- Laravel 11, 12, or 13
-- An Eloquent user model
+> Composer will automatically resolve compatible Laravel / Illuminate versions based on your project.
 
 ## Installation
 
@@ -70,6 +48,29 @@ class User extends Authenticatable
     use Bannable;
 }
 ```
+
+## Features
+
+- Account-only bans
+- IP-only bans
+- Combined account and IP bans
+- CIDR network bans with IPv4 and IPv6 support
+- Device fingerprint bans without storing raw fingerprints
+- Combined account, device, and IP bans
+- Temporary and permanent enforcement
+- Public reasons and private moderator notes
+- Configurable ban categories
+- Moderator issuance and revocation tracking
+- Warnings with severity and acknowledgement
+- Strike points with automatic escalation
+- Login, posting, read-only, and shadow restrictions
+- Ban appeals with approval, denial, and withdrawal
+- Evidence attachments with configurable storage
+- Automatic audit history
+- Middleware and custom 403 responses
+- Lifecycle events and optional notifications
+- Expiration processing and retention pruning commands
+- Configurable models and table names
 
 ## Account bans
 
@@ -289,11 +290,25 @@ composer analyse
 vendor/bin/pint --test
 ```
 
+## Documentation
+
+Full docs are available in the [`docs`](docs) directory:
+
+- [Architecture](docs/architecture.md)
+- [Configuration](docs/configuration.md)
+- [Security](docs/security.md)
+
 ## Security
 
 Keep `EXILE_HASH_KEY` private. Exile uses keyed HMAC hashes for IP and device matching. Human-readable IP addresses and CIDR ranges are encrypted at rest using Laravel's encryption system.
 
 Do not use device fingerprints as a sole identity signal. Treat them as one moderation indicator alongside account history, IP context, and human review.
+
+If you discover a security vulnerability, please report it privately instead of opening a public issue.
+
+## Credits
+
+Built by Eloquent Works.
 
 ## License
 
