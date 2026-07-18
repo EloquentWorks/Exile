@@ -74,6 +74,14 @@ return [
         'hash_key' => env('EXILE_HASH_KEY', env('APP_KEY')),
         'device_header' => 'X-Device-Fingerprint',
         'trust_request_ip' => true,
+
+        /*
+        | Supported values: any, all
+        |
+        | any: A combined ban matches when any stored identifier matches.
+        | all: Every identifier required by the ban type must match.
+        */
+        'combined_ban_match' => 'any',
     ],
 
     /*

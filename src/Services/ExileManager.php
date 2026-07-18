@@ -898,11 +898,11 @@ final class ExileManager
     }
 
     /**
-     * Revoke a ban, restriction, or strike.
+     * Revoke a ban.
      *
-     * @param  Ban|Restriction|Strike  $ban  The enforcement record to revoke.
+     * @param  Ban  $ban  The ban record to revoke.
      * @param  Model|null  $moderator  The moderator performing the revocation (optional).
-     * @return bool Returns true if the enforcement was successfully revoked, false otherwise.
+     * @return bool Returns true if the ban was successfully revoked, false otherwise.
      */
     public function revokeBan(Ban $ban, ?Model $moderator = null): bool
     {
