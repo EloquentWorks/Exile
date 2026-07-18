@@ -9,6 +9,9 @@ use EloquentWorks\Exile\Models\ModerationAction;
 use EloquentWorks\Exile\Models\Restriction;
 use EloquentWorks\Exile\Models\Strike;
 use EloquentWorks\Exile\Models\Warning;
+use EloquentWorks\Exile\Notifications\BanExpiredNotification;
+use EloquentWorks\Exile\Notifications\BanIssuedNotification;
+use EloquentWorks\Exile\Notifications\BanRevokedNotification;
 
 return [
 
@@ -71,19 +74,21 @@ return [
     | device. Only trust request IP addresses when your application's proxy
     | and trusted-proxy configuration has been configured correctly.
     |
+    | Combined-ban matching supports two modes:
+    |
+    | "any" preserves the original behavior and matches when any identifier
+    | stored by a combined ban matches the enforcement context.
+    |
+    | "all" requires every identifier belonging to the combined ban type to
+    | be present and match. For AccountAndIp, both the account and IP address
+    | must match. For AccountDeviceAndIp, all three identifiers must match.
+    |
     */
 
     'security' => [
         'hash_key' => env('EXILE_HASH_KEY', env('APP_KEY')),
         'device_header' => 'X-Device-Fingerprint',
         'trust_request_ip' => true,
-
-        /*
-        | Supported values: any, all
-        |
-        | any: A combined ban matches when any stored identifier matches.
-        | all: Every identifier required by the ban type must match.
-        */
         'combined_ban_match' => 'any',
     ],
 
@@ -132,20 +137,112 @@ return [
     | Notifications
     |--------------------------------------------------------------------------
     |
-    | Exile can notify affected users when account bans are issued,
-    | revoked, or expired. Appeal workflows dispatch lifecycle events that
-    | applications may listen to when custom notifications are required.
+    | Exile can notify affected users when account bans are issued, revoked,
+    | or expired. Appeal workflows dispatch lifecycle events that applications
+    | may listen to when custom notifications are required.
     |
     */
 
     'notifications' => [
         'enabled' => false,
+
+        /*
+        | These channels are returned by the bundled notification classes.
+        | Applications may use any Laravel notification channel that has been
+        | installed and configured.
+        */
         'channels' => ['mail'],
+
         'issued' => true,
         'revoked' => true,
         'expired' => true,
+
+        /*
+        | When enabled, notification construction and delivery exceptions are
+        | reported without reversing a successfully committed enforcement.
+        */
         'fail_silently' => true,
+
+        /*
+        | Applications may replace any bundled notification class. Replacement
+        | classes must extend Laravel's Notification class and should accept a
+        | Ban instance through a constructor parameter named "ban".
+        */
+        'classes' => [
+            'issued' => BanIssuedNotification::class,
+            'revoked' => BanRevokedNotification::class,
+            'expired' => BanExpiredNotification::class,
+        ],
+
+        /*
+        | Mail templates may point to Exile's bundled Markdown views or to any
+        | application view. Publish the bundled views with:
+        |
+        | php artisan vendor:publish --tag=exile-views
+        |
+        | Published templates are placed in:
+        |
+        | resources/views/vendor/exile/mail
+        */
+        'mail' => [
+            'issued' => [
+                'subject' => 'Account enforcement notice',
+                'view' => 'exile::mail.ban-issued',
+                'heading' => 'Your access has been suspended',
+                'intro' => 'A moderation enforcement has been applied to your account.',
+                'reason_label' => 'Reason',
+                'expiration_label' => 'Expires',
+                'permanent_text' => 'This enforcement is permanent.',
+                'action_text' => null,
+                'action_url' => null,
+                'outro' => 'Contact the application support team if you believe this enforcement was issued in error.',
+                'salutation' => null,
+            ],
+
+            'revoked' => [
+                'subject' => 'Enforcement revoked',
+                'view' => 'exile::mail.ban-revoked',
+                'heading' => 'Your enforcement has been revoked',
+                'intro' => 'The moderation enforcement applied to your account is no longer active.',
+                'action_text' => null,
+                'action_url' => null,
+                'outro' => null,
+                'salutation' => null,
+            ],
+
+            'expired' => [
+                'subject' => 'Enforcement expired',
+                'view' => 'exile::mail.ban-expired',
+                'heading' => 'Your enforcement has expired',
+                'intro' => 'The temporary moderation enforcement applied to your account has expired.',
+                'action_text' => null,
+                'action_url' => null,
+                'outro' => null,
+                'salutation' => null,
+            ],
+
+            /*
+            | Used when formatting enforcement expiration timestamps inside the
+            | bundled views. Set timezone to null to preserve the stored zone.
+            */
+            'date_format' => 'M j, Y g:i A T',
+            'timezone' => null,
+        ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Appeal Action
+    |--------------------------------------------------------------------------
+    |
+    | These values are used to generate a link to the appeal workflow in
+    | the issued-ban notification. Applications may replace the URL with a
+    | route to a custom appeal page or workflow.
+    |
+    */
+
+    'action_text' => 'Appeal this enforcement',
+    'action_url' => 'https://example.com/account/appeals',
 
     /*
     |--------------------------------------------------------------------------
@@ -159,6 +256,7 @@ return [
     */
 
     'appeals' => [
+        'enabled' => true,
         'allow_multiple_pending' => false,
         'max_message_length' => 3000,
     ],

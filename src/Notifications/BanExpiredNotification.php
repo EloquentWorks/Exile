@@ -2,58 +2,11 @@
 
 namespace EloquentWorks\Exile\Notifications;
 
-use EloquentWorks\Exile\Models\Ban;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
-
 /**
  * Notification sent when a ban expires.
  */
-final class BanExpiredNotification extends Notification implements ShouldQueue
+final class BanExpiredNotification extends BanNotification
 {
-    use Queueable;
-
-    /**
-     * Create a new notification instance.
-     *
-     * @param  Ban  $ban  The ban that has expired.
-     */
-    public function __construct(
-        public readonly Ban $ban
-    ) {
-        $this->afterCommit();
-    }
-
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  object  $notifiable  The entity to which the notification is being sent.
-     * @return array<int, string> The channels through which the notification will be sent.
-     */
-    public function via(object $notifiable): array
-    {
-        /** @var list<string> $channels */
-        $channels = config('exile.notifications.channels', ['mail']);
-
-        // If the notifiable entity has a custom notification channel, use it instead
-        return $channels;
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     *
-     * @param  object  $notifiable  The entity to which the notification is being sent.
-     * @return MailMessage The mail message to be sent.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Enforcement expired')
-            ->line('Your temporary account enforcement has expired.');
-    }
-
     /**
      * Get the array representation of the notification.
      *
@@ -62,6 +15,42 @@ final class BanExpiredNotification extends Notification implements ShouldQueue
      */
     public function toArray(object $notifiable): array
     {
-        return ['ban_id' => $this->ban->getKey(), 'expired_at' => $this->ban->expires_at?->toISOString()];
+        // Return an array representation of the notification, including the ban ID and expiration timestamp.
+        return [
+            'ban_id' => $this->ban->getKey(),
+            'expired_at' => $this->ban
+                ->expires_at
+                ?->toISOString(),
+        ];
+    }
+
+    /**
+     * Get the notification key for this notification.
+     *
+     * @return string The notification key used to retrieve configuration settings.
+     */
+    protected function notificationKey(): string
+    {
+        return 'expired';
+    }
+
+    /**
+     * Get the default subject for this notification.
+     *
+     * @return string The default subject.
+     */
+    protected function defaultSubject(): string
+    {
+        return 'Enforcement expired';
+    }
+
+    /**
+     * Get the default view for this notification.
+     *
+     * @return string The default view.
+     */
+    protected function defaultView(): string
+    {
+        return 'exile::mail.ban-expired';
     }
 }

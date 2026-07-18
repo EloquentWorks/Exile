@@ -41,6 +41,10 @@ final class ExileServiceProvider extends ServiceProvider
      */
     public function boot(Router $router): void
     {
+        // Load the package's database migrations and views
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'exile');
+
         // Register middleware aliases for handling bans, restrictions, and shadow bans
         $router->aliasMiddleware((string) config('exile.middleware.ban_alias', 'exile'), EnsureNotBanned::class);
         $router->aliasMiddleware((string) config('exile.middleware.restriction_alias', 'exile.allowed'), EnsureActionAllowed::class);
@@ -57,6 +61,11 @@ final class ExileServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'exile-migrations');
+
+            // Publish view files for the Exile package
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/exile'),
+            ], 'exile-views');
 
             // Register console commands for installation, expiration, and pruning
             $this->commands([

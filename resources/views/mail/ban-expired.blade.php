@@ -1,0 +1,21 @@
+<x-mail::message>
+# {{ $mail['heading'] ?? 'Your enforcement has expired' }}
+
+{{ $mail['intro'] ?? 'The temporary moderation enforcement applied to your account has expired.' }}
+
+@if (
+    ! empty($mail['action_text'])
+    && ! empty($mail['action_url'])
+)
+<x-mail::button :url="$mail['action_url']">
+{{ $mail['action_text'] }}
+</x-mail::button>
+@endif
+
+@if (! empty($mail['outro']))
+{{ $mail['outro'] }}
+@endif
+
+{{ $mail['salutation'] ?? 'Regards,' }}<br>
+{{ config('app.name') }}
+</x-mail::message>

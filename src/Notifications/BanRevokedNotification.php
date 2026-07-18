@@ -2,68 +2,55 @@
 
 namespace EloquentWorks\Exile\Notifications;
 
-use EloquentWorks\Exile\Models\Ban;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
-
 /**
  * Notification sent when a ban is revoked.
  */
-final class BanRevokedNotification extends Notification implements ShouldQueue
+final class BanRevokedNotification extends BanNotification
 {
-    use Queueable;
-
-    /**
-     * Create a new notification instance.
-     *
-     * @param  Ban  $ban  The ban that has expired.
-     */
-    public function __construct(
-        public readonly Ban $ban
-    ) {
-        $this->afterCommit();
-    }
-
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  object  $notifiable  The entity to be notified.
-     * @return array<int, string> The channels through which the notification will be sent.
-     */
-    public function via(object $notifiable): array
-    {
-        /** @var list<string> $channels */
-        $channels = config('exile.notifications.channels', ['mail']);
-
-        // You can customize the channels based on the notifiable entity or other conditions if needed.
-        return $channels;
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     *
-     * @param  object  $notifiable  The entity to be notified.
-     * @return MailMessage The mail message to be sent.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        // You can customize the email content here. For example, you might want to include details about the ban that was revoked.
-        return (new MailMessage)
-            ->subject('Enforcement revoked')
-            ->line('Your account enforcement has been revoked.');
-    }
-
     /**
      * Get the array representation of the notification.
      *
-     * @param  object  $notifiable  The entity to be notified.
+     * @param  object  $notifiable  The entity to which the notification is being sent.
      * @return array<string, mixed> The array representation of the notification.
      */
     public function toArray(object $notifiable): array
     {
-        // You can customize the array representation here. For example, you might want to include details about the ban that was revoked.
-        return ['ban_id' => $this->ban->getKey(), 'revoked_at' => $this->ban->revoked_at?->toISOString()];
+        // Return an array representation of the notification, including the ban ID and revocation timestamp.
+        return [
+            'ban_id' => $this->ban->getKey(),
+            'revoked_at' => $this->ban
+                ->revoked_at
+                ?->toISOString(),
+        ];
+    }
+
+    /**
+     * Get the notification key for this notification.
+     *
+     * @return string The notification key used to retrieve configuration settings.
+     */
+    protected function notificationKey(): string
+    {
+        return 'revoked';
+    }
+
+    /**
+     * Get the default subject for this notification.
+     *
+     * @return string The default subject.
+     */
+    protected function defaultSubject(): string
+    {
+        return 'Enforcement revoked';
+    }
+
+    /**
+     * Get the default view for this notification.
+     *
+     * @return string The default view.
+     */
+    protected function defaultView(): string
+    {
+        return 'exile::mail.ban-revoked';
     }
 }
