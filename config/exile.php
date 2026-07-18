@@ -1,5 +1,6 @@
 <?php
 
+use EloquentWorks\Exile\Models\AppliedEscalation;
 use EloquentWorks\Exile\Models\Ban;
 use EloquentWorks\Exile\Models\BanAppeal;
 use EloquentWorks\Exile\Models\DeviceFingerprint;
@@ -31,6 +32,7 @@ return [
         'evidence' => 'exile_evidence',
         'device_fingerprints' => 'exile_device_fingerprints',
         'actions' => 'exile_actions',
+        'escalations' => 'exile_escalations',
     ],
 
     /*
@@ -53,6 +55,7 @@ return [
         'evidence' => Evidence::class,
         'device_fingerprint' => DeviceFingerprint::class,
         'action' => ModerationAction::class,
+        'escalation' => AppliedEscalation::class,
     ],
 
     /*
@@ -141,6 +144,7 @@ return [
         'issued' => true,
         'revoked' => true,
         'expired' => true,
+        'fail_silently' => true,
     ],
 
     /*
@@ -155,7 +159,6 @@ return [
     */
 
     'appeals' => [
-        'enabled' => true,
         'allow_multiple_pending' => false,
         'max_message_length' => 3000,
     ],

@@ -3,23 +3,27 @@
 namespace EloquentWorks\Exile\Services;
 
 use DateInterval;
+use DateTimeInterface;
 use EloquentWorks\Exile\Enums\BanType;
 use EloquentWorks\Exile\Enums\RestrictionType;
-use EloquentWorks\Exile\Models\ModerationAction;
+use EloquentWorks\Exile\Models\AppliedEscalation;
 use EloquentWorks\Exile\Models\Strike;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
- * Service responsible for evaluating and applying moderation escalations based on strike points.
+ * The EscalationEngine class is responsible for evaluating and applying automatic moderation escalations
+ * based on the accumulated strike points of an account. It checks configured thresholds and applies
+ * bans or restrictions accordingly.
  */
 final class EscalationEngine
 {
     /**
-     * Constructs a new instance of the EscalationEngine.
+     * Create a new instance of the EscalationEngine.
      *
-     * @param  EnforcementWriter  $writer  The enforcement writer for issuing bans and restrictions.
-     * @param  AuditLogger  $audit  The audit logger for logging escalation actions.
+     * @param  EnforcementWriter  $writer  The enforcement writer used to issue bans and restrictions.
+     * @param  AuditLogger  $audit  The audit logger used to log escalation actions.
      */
     public function __construct(
         private readonly EnforcementWriter $writer,
@@ -27,50 +31,164 @@ final class EscalationEngine
     ) {}
 
     /**
-     * Evaluates the given account for potential moderation escalations based on strike points.
+     * Evaluate the account for automatic moderation escalations.
      *
-     * @param  Model  $account  The account to evaluate for escalation.
+     * This method checks if automatic escalation is enabled in the configuration. If enabled,
+     * it locks the account record for update and evaluates the accumulated strike points against
+     * configured thresholds. If a threshold is met, it issues the corresponding ban or restriction.
+     *
+     * @param  Model  $account  The account model to evaluate for escalation.
      */
     public function evaluate(Model $account): void
     {
-        // Check if escalation is enabled in the configuration
-        if (! config('exile.escalation.enabled', true)) {
+        // Check if automatic escalation is enabled in the configuration
+        if (
+            ! config(
+                'exile.escalation.enabled',
+                true
+            )
+        ) {
             return;
         }
 
-        /** @var class-string<Strike> $strikeModel */
-        $strikeModel = config('exile.models.strike', Strike::class);
+        // Perform the evaluation within a database transaction to ensure atomicity
+        DB::transaction(
+            function () use ($account): void {
+                // Lock the account record for update to prevent race conditions
+                $account->newQuery()
+                    ->whereKey($account->getKey())
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-        // Calculate the total active strike points for the account
+                // Evaluate the account for escalation based on accumulated strike points
+                $this->evaluateLocked($account);
+            }
+        );
+    }
+
+    /**
+     * Evaluate the account for escalation while holding a database lock.
+     *
+     * This method retrieves the accumulated strike points for the account and checks against
+     * configured thresholds. If a threshold is met, it issues the corresponding ban or restriction.
+     *
+     * @param  Model  $account  The account model to evaluate for escalation.
+     */
+    private function evaluateLocked(
+        Model $account
+    ): void {
+        /** @var class-string<Strike> $strikeModel */
+        $strikeModel = config(
+            'exile.models.strike',
+            Strike::class
+        );
+
+        // Retrieve the total active strike points for the account
         $points = (int) $strikeModel::query()
-            ->where('strikeable_type', $account->getMorphClass())
-            ->where('strikeable_id', $account->getKey())
+            ->where(
+                'strikeable_type',
+                $account->getMorphClass()
+            )
+            ->where(
+                'strikeable_id',
+                $account->getKey()
+            )
             ->active()
             ->sum('points');
 
         /** @var list<array<string, mixed>> $thresholds */
-        $thresholds = config('exile.escalation.thresholds', []);
-        usort($thresholds, static fn (array $a, array $b): int => ((int) ($b['points'] ?? 0)) <=> ((int) ($a['points'] ?? 0)));
+        $thresholds = config(
+            'exile.escalation.thresholds',
+            []
+        );
 
-        // Iterate through the configured thresholds to determine if any escalation actions should be applied
+        // Sort the thresholds in descending order based on the required points
+        usort(
+            $thresholds,
+            static fn (
+                array $left,
+                array $right
+            ): int => (
+                (int) ($right['points'] ?? 0)
+            ) <=> (
+                (int) ($left['points'] ?? 0)
+            )
+        );
+
+        // Iterate through the thresholds and apply the first one that meets the criteria
         foreach ($thresholds as $threshold) {
-            // Determine the required points for this threshold, defaulting to PHP_INT_MAX if not specified
-            $required = (int) ($threshold['points'] ?? PHP_INT_MAX);
+            // Check if the threshold has already been applied for this account
+            $requiredPoints = (int) (
+                $threshold['points']
+                ?? PHP_INT_MAX
+            );
 
-            // Check if the account's points meet the threshold and if the escalation has already been applied
-            if ($points < $required || $this->wasApplied($account, $required)) {
+            // If the account's active points are less than the required points for this threshold, skip to the next threshold
+            if ($points < $requiredPoints) {
                 continue;
             }
 
-            // Determine the expiration time for the escalation action based on the configured duration
-            $expiresAt = $this->expiration((string) ($threshold['duration'] ?? ''));
-            $reason = (string) ($threshold['reason'] ?? 'Automatic moderation escalation.');
-            $action = (string) ($threshold['action'] ?? '');
-            $metadata = ['source' => 'automatic_escalation', 'threshold' => $required, 'active_points' => $points];
+            // Determine the action to take (ban or restriction) based on the threshold configuration
+            $action = (string) (
+                $threshold['action']
+                ?? ''
+            );
 
-            // Apply the appropriate escalation action based on the configured action type (ban or restriction)
+            // If the action is not recognized (not 'ban' or 'restriction'), skip to the next threshold
+            if (
+                ! in_array(
+                    $action,
+                    ['ban', 'restriction'],
+                    true
+                )
+            ) {
+                continue;
+            }
+
+            // Attempt to reserve the threshold for this account to prevent duplicate escalations
+            if (
+                ! $this->reserveThreshold(
+                    $account,
+                    $requiredPoints,
+                    $action,
+                    $points
+                )
+            ) {
+                continue;
+            }
+
+            // Determine the expiration time for the ban or restriction based on the threshold configuration
+            $expiresAt = $this->expiration(
+                (string) (
+                    $threshold['duration']
+                    ?? ''
+                )
+            );
+
+            // Determine the reason for the ban or restriction based on the threshold configuration
+            $reason = (string) (
+                $threshold['reason']
+                ?? 'Automatic moderation escalation.'
+            );
+
+            // Prepare metadata for logging and auditing purposes
+            $metadata = [
+                'source' => 'automatic_escalation',
+                'threshold' => $requiredPoints,
+                'active_points' => $points,
+            ];
+
+            // Issue the ban or restriction based on the determined action
             if ($action === 'ban') {
-                $type = BanType::tryFrom((string) ($threshold['type'] ?? 'account')) ?? BanType::Account;
+                // Determine the type of ban based on the threshold configuration, defaulting to 'Account' if not specified
+                $type = BanType::tryFrom(
+                    (string) (
+                        $threshold['type']
+                        ?? BanType::Account->value
+                    )
+                ) ?? BanType::Account;
+
+                // Issue the ban using the enforcement writer
                 $this->writer->issueBan(
                     type: $type,
                     account: $account,
@@ -78,8 +196,16 @@ final class EscalationEngine
                     expiresAt: $expiresAt,
                     metadata: $metadata,
                 );
-            } elseif ($action === 'restriction') {
-                $type = RestrictionType::tryFrom((string) ($threshold['type'] ?? 'posting')) ?? RestrictionType::Posting;
+            } else {
+                // Determine the type of restriction based on the threshold configuration, defaulting to 'Posting' if not specified
+                $type = RestrictionType::tryFrom(
+                    (string) (
+                        $threshold['type']
+                        ?? RestrictionType::Posting->value
+                    )
+                ) ?? RestrictionType::Posting;
+
+                // Issue the restriction using the enforcement writer
                 $this->writer->issueRestriction(
                     account: $account,
                     type: $type,
@@ -87,56 +213,95 @@ final class EscalationEngine
                     expiresAt: $expiresAt,
                     metadata: $metadata,
                 );
-            } else {
-                continue;
             }
 
-            // Log the escalation action in the audit log
-            $this->audit->log('escalation.applied', $account, null, $metadata + ['action' => $action]);
+            // Log the escalation action in the audit log for tracking and accountability
+            $this->audit->log(
+                'escalation.applied',
+                $account,
+                null,
+                $metadata + [
+                    'action' => $action,
+                ]
+            );
 
-            // Exit the loop after applying the first applicable escalation action
+            // After applying the first applicable threshold, exit the loop to prevent multiple escalations in a single evaluation
             return;
         }
     }
 
     /**
-     * Checks if an escalation action has already been applied to the given account for the specified threshold.
+     * Reserve a threshold for the account to prevent duplicate escalations.
      *
-     * @param  Model  $account  The account to check for applied escalations.
-     * @param  int  $threshold  The threshold points to check against.
-     * @return bool Returns true if the escalation action has already been applied, false otherwise.
+     * This method attempts to insert a record into the applied escalations table to indicate that
+     * the specified threshold has been applied for the account. If the insertion is successful,
+     * it returns true; otherwise, it returns false, indicating that the threshold has already been applied.
+     *
+     * @param  Model  $account  The account model for which the threshold is being reserved.
+     * @param  int  $thresholdPoints  The number of points required for the threshold.
+     * @param  string  $action  The action associated with the threshold (e.g., 'ban' or 'restriction').
+     * @param  int  $activePoints  The current active points of the account.
+     * @return bool Returns true if the threshold was successfully reserved; false if it was already applied.
      */
-    private function wasApplied(Model $account, int $threshold): bool
-    {
-        /** @var class-string<ModerationAction> $actionModel */
-        $actionModel = config('exile.models.action', ModerationAction::class);
+    private function reserveThreshold(
+        Model $account,
+        int $thresholdPoints,
+        string $action,
+        int $activePoints
+    ): bool {
+        /** @var class-string<AppliedEscalation> $modelClass */
+        $modelClass = config(
+            'exile.models.escalation',
+            AppliedEscalation::class
+        );
 
-        // Query the moderation actions to check if an escalation action has already been applied for the given account and threshold
-        return $actionModel::query()
-            ->where('action', 'escalation.applied')
-            ->where('subject_type', $account->getMorphClass())
-            ->where('subject_id', $account->getKey())
-            ->get()
-            ->contains(static fn (ModerationAction $action): bool => (int) data_get($action->context, 'threshold') === $threshold);
+        // Get the current timestamp to use for the created_at and updated_at fields
+        $timestamp = now();
+
+        // Attempt to insert a new record into the applied escalations table with the specified threshold details.
+        return $modelClass::query()
+            ->insertOrIgnore([
+                'escalatable_type' => $account
+                    ->getMorphClass(),
+                'escalatable_id' => $account
+                    ->getKey(),
+                'threshold_points' => $thresholdPoints,
+                'action' => $action,
+                'metadata' => json_encode(
+                    [
+                        'active_points' => $activePoints,
+                    ],
+                    JSON_THROW_ON_ERROR
+                ),
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]) === 1;
     }
 
     /**
-     * Calculates the expiration time based on the given duration string.
+     * Calculate the expiration time based on the provided duration string.
+     *
+     * This method attempts to create a DateInterval from the provided duration string and adds it
+     * to the current time. If the duration string is empty or invalid, it returns null.
      *
      * @param  string  $duration  The duration string (e.g., 'P1D' for 1 day).
-     * @return \DateTimeInterface|null Returns the calculated expiration time or null if the duration is empty or invalid.
+     * @return DateTimeInterface|null Returns the calculated expiration time or null if invalid.
      */
-    private function expiration(string $duration): ?\DateTimeInterface
-    {
-        // If the duration string is empty, return null to indicate no expiration time.
+    private function expiration(
+        string $duration
+    ): ?DateTimeInterface {
+        // If the duration string is empty, return null to indicate no expiration.
         if ($duration === '') {
             return null;
         }
 
-        // Attempt to create a DateInterval from the duration string and add it to the current time. If an exception occurs, return null.
+        // Attempt to create a DateInterval from the provided duration string and add it to the current time.
         try {
-            return now()->add(new DateInterval($duration));
+            return now()->add(
+                new DateInterval($duration)
+            );
         } catch (Throwable) {
+            // If the duration string is invalid, return null to indicate no expiration.
             return null;
         }
     }

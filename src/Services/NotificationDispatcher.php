@@ -9,6 +9,7 @@ use EloquentWorks\Exile\Notifications\BanRevokedNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Throwable;
 
 /**
  * Dispatches notifications for ban events.
@@ -62,17 +63,51 @@ final class NotificationDispatcher
      */
     private function send(?Model $recipient, Notification $notification): void
     {
-        // Check if notifications are enabled and if the recipient is valid
-        if (! config('exile.notifications.enabled', false) || $recipient === null) {
+        // Check if notifications are globally enabled and if the recipient is not null
+        if (
+            ! config(
+                'exile.notifications.enabled',
+                false
+            )
+            || $recipient === null
+        ) {
             return;
         }
 
-        // Check if the recipient can receive notifications
-        if (! method_exists($recipient, 'routeNotificationFor') && ! method_exists($recipient, 'notify')) {
+        // Check if the recipient has the necessary methods to receive notifications
+        if (
+            ! method_exists(
+                $recipient,
+                'routeNotificationFor'
+            )
+            && ! method_exists(
+                $recipient,
+                'notify'
+            )
+        ) {
             return;
         }
 
-        // Send the notification to the recipient
-        NotificationFacade::send($recipient, $notification);
+        // Attempt to send the notification and handle any exceptions that may occur
+        try {
+            // Use the Notification facade to send the notification to the recipient
+            NotificationFacade::send(
+                $recipient,
+                $notification
+            );
+        } catch (Throwable $exception) {
+            // If the configuration is set to not fail silently, rethrow the exception
+            if (
+                ! config(
+                    'exile.notifications.fail_silently',
+                    true
+                )
+            ) {
+                throw $exception;
+            }
+
+            // If failing silently, log the exception for debugging purposes
+            report($exception);
+        }
     }
 }

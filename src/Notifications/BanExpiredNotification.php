@@ -3,20 +3,28 @@
 namespace EloquentWorks\Exile\Notifications;
 
 use EloquentWorks\Exile\Models\Ban;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
  * Notification sent when a ban expires.
  */
-final class BanExpiredNotification extends Notification
+final class BanExpiredNotification extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     /**
      * Create a new notification instance.
      *
      * @param  Ban  $ban  The ban that has expired.
      */
-    public function __construct(public readonly Ban $ban) {}
+    public function __construct(
+        public readonly Ban $ban
+    ) {
+        $this->afterCommit();
+    }
 
     /**
      * Get the notification's delivery channels.
