@@ -18,6 +18,7 @@ use EloquentWorks\Exile\Models\Strike;
 use EloquentWorks\Exile\Models\Warning;
 use EloquentWorks\Exile\Support\IdentifierHasher;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 /**
@@ -25,6 +26,14 @@ use InvalidArgumentException;
  */
 final class EnforcementWriter
 {
+    /**
+     * Constructs a new EnforcementWriter instance.
+     *
+     * @param  IdentifierHasher  $hasher  The identifier hasher for hashing sensitive data.
+     * @param  IpMatcher  $ipMatcher  The IP matcher for validating and normalizing IP addresses.
+     * @param  AuditLogger  $audit  The audit logger for logging enforcement actions.
+     * @param  NotificationDispatcher  $notifications  The notification dispatcher for sending notifications.
+     */
     public function __construct(
         private readonly IdentifierHasher $hasher,
         private readonly IpMatcher $ipMatcher,
@@ -36,17 +45,17 @@ final class EnforcementWriter
      * Issue a ban to an account, IP address, or device.
      *
      * @param  BanType  $type  The type of ban to issue.
-     * @param  Model|null  $account  The account to ban (optional).
-     * @param  string|null  $ipAddress  The IP address to ban (optional).
-     * @param  string|null  $cidr  The CIDR range for a network ban (optional).
-     * @param  string|null  $deviceFingerprint  The device fingerprint to ban (optional).
-     * @param  string|null  $category  The category of the ban (optional).
-     * @param  string|null  $reason  The reason for the ban (optional).
-     * @param  string|null  $internalNotes  Internal notes for the ban (optional).
-     * @param  DateTimeInterface|null  $expiresAt  The expiration date of the ban (optional).
-     * @param  Model|null  $moderator  The moderator issuing the ban (optional).
-     * @param  array<string, mixed>  $metadata  Additional metadata for the ban (optional).
-     * @return Ban The created ban instance.
+     * @param  Model|null  $account  The account to ban (if applicable).
+     * @param  string|null  $ipAddress  The IP address to ban (if applicable).
+     * @param  string|null  $cidr  The CIDR range to ban (if applicable).
+     * @param  string|null  $deviceFingerprint  The device fingerprint to ban (if applicable).
+     * @param  string|null  $category  The category of the ban (if applicable).
+     * @param  string|null  $reason  The reason for the ban (if applicable).
+     * @param  string|null  $internalNotes  Internal notes for the ban (if applicable).
+     * @param  DateTimeInterface|null  $expiresAt  The expiration date of the ban (if applicable).
+     * @param  Model|null  $moderator  The moderator issuing the ban (if applicable).
+     * @param  array<string, mixed>  $metadata  Additional metadata for the ban.
+     * @return Ban The issued ban instance.
      */
     public function issueBan(
         BanType $type,
@@ -61,15 +70,21 @@ final class EnforcementWriter
         ?Model $moderator = null,
         array $metadata = [],
     ): Ban {
-        /** Validate the expiration date, category, and ban requirements. */
+        // Validate the expiration date, category, and ban requirements before proceeding
         $this->validateExpiration($expiresAt);
         $this->validateCategory($category);
-        $this->validateBanRequirements($type, $account, $ipAddress, $cidr, $deviceFingerprint);
+        $this->validateBanRequirements(
+            $type,
+            $account,
+            $ipAddress,
+            $cidr,
+            $deviceFingerprint,
+        );
 
         /** @var class-string<Ban> $modelClass */
         $modelClass = config('exile.models.ban', Ban::class);
 
-        // Prepare the attributes for creating the ban record.
+        // Prepare the attributes for creating the ban record
         $attributes = [
             'type' => $type,
             'bannable_type' => $account?->getMorphClass(),
@@ -83,51 +98,72 @@ final class EnforcementWriter
             'expires_at' => $expiresAt,
         ];
 
-        // If an IP address is provided, normalize and hash it for storage.
+        // If an IP address is provided, normalize and hash it for storage
         if ($ipAddress !== null) {
             $normalizedIp = $this->hasher->normalizeIp($ipAddress);
             $attributes['ip_address'] = $normalizedIp;
             $attributes['ip_hash'] = $this->hasher->hashIp($normalizedIp);
         }
 
-        // If a CIDR range is provided, normalize it for storage.
+        // If a CIDR range is provided, normalize it for storage
         if ($cidr !== null) {
             $attributes['cidr'] = $this->ipMatcher->normalizeCidr($cidr);
         }
 
-        // If a device fingerprint is provided, hash it for storage.
+        // If a device fingerprint is provided, hash it for storage
         if ($deviceFingerprint !== null) {
-            $attributes['device_hash'] = $this->hasher->hashDevice($deviceFingerprint);
+            $attributes['device_hash'] = $this->hasher->hashDevice(
+                $deviceFingerprint
+            );
         }
 
-        /** @var Ban $ban */
-        $ban = $modelClass::query()->create($attributes);
+        // Use a database transaction to create the ban record and log the action
+        return DB::transaction(function () use (
+            $modelClass,
+            $attributes,
+            $type,
+            $category,
+            $account,
+            $moderator,
+        ): Ban {
+            /** @var Ban $ban */
+            $ban = $modelClass::query()->create($attributes);
 
-        // Trigger the BanIssued event, log the action in the audit log, and send notifications.
-        event(new BanIssued($ban));
-        $this->audit->log('ban.issued', $ban, $moderator, [
-            'type' => $type->value,
-            'category' => $category,
-            'account_type' => $account?->getMorphClass(),
-            'account_id' => $account?->getKey(),
-        ]);
-        $this->notifications->banIssued($ban);
+            // Log the ban issuance in the audit log with relevant details
+            $this->audit->log(
+                'ban.issued',
+                $ban,
+                $moderator,
+                [
+                    'type' => $type->value,
+                    'category' => $category,
+                    'account_type' => $account?->getMorphClass(),
+                    'account_id' => $account?->getKey(),
+                ],
+            );
 
-        // Return the created ban instance.
-        return $ban;
+            // After the transaction is committed, trigger the BanIssued event and send notifications
+            DB::afterCommit(function () use ($ban): void {
+                event(new BanIssued($ban));
+                $this->notifications->banIssued($ban);
+            });
+
+            // Return the created ban instance
+            return $ban;
+        });
     }
 
     /**
      * Issue a restriction to an account.
      *
-     * @param  Model  $account  The account to issue the restriction to.
-     * @param  RestrictionType  $type  The type of restriction to issue.
+     * @param  Model  $account  The account being restricted.
+     * @param  RestrictionType  $type  The type of restriction being issued.
      * @param  string|null  $reason  The reason for the restriction (optional).
      * @param  string|null  $internalNotes  Internal notes for the restriction (optional).
      * @param  DateTimeInterface|null  $expiresAt  The expiration date of the restriction (optional).
      * @param  Model|null  $moderator  The moderator issuing the restriction (optional).
      * @param  array<string, mixed>  $metadata  Additional metadata for the restriction (optional).
-     * @return Restriction The created restriction instance.
+     * @return Restriction The issued restriction instance.
      */
     public function issueRestriction(
         Model $account,
@@ -138,48 +174,72 @@ final class EnforcementWriter
         ?Model $moderator = null,
         array $metadata = [],
     ): Restriction {
-        // Validate the expiration date for the restriction.
+        // Validate the expiration date before proceeding
         $this->validateExpiration($expiresAt);
 
         /** @var class-string<Restriction> $modelClass */
-        $modelClass = config('exile.models.restriction', Restriction::class);
+        $modelClass = config(
+            'exile.models.restriction',
+            Restriction::class
+        );
 
-        /** @var Restriction $restriction */
-        $restriction = $modelClass::query()->create([
-            'restrictable_type' => $account->getMorphClass(),
-            'restrictable_id' => $account->getKey(),
-            'type' => $type,
-            'reason' => $reason,
-            'internal_notes' => $internalNotes,
-            'metadata' => $metadata,
-            'issued_by_type' => $moderator?->getMorphClass(),
-            'issued_by_id' => $moderator?->getKey(),
-            'expires_at' => $expiresAt,
-        ]);
+        // Use a database transaction to create the restriction record and log the action
+        return DB::transaction(function () use (
+            $modelClass,
+            $account,
+            $type,
+            $reason,
+            $internalNotes,
+            $expiresAt,
+            $moderator,
+            $metadata,
+        ): Restriction {
+            /** @var Restriction $restriction */
+            $restriction = $modelClass::query()->create([
+                'restrictable_type' => $account->getMorphClass(),
+                'restrictable_id' => $account->getKey(),
+                'type' => $type,
+                'reason' => $reason,
+                'internal_notes' => $internalNotes,
+                'metadata' => $metadata,
+                'issued_by_type' => $moderator?->getMorphClass(),
+                'issued_by_id' => $moderator?->getKey(),
+                'expires_at' => $expiresAt,
+            ]);
 
-        // Trigger the RestrictionIssued event and log the action in the audit log.
-        event(new RestrictionIssued($restriction));
-        $this->audit->log('restriction.issued', $restriction, $moderator, [
-            'type' => $type->value,
-            'account_type' => $account->getMorphClass(),
-            'account_id' => $account->getKey(),
-        ]);
+            // Log the restriction issuance in the audit log with relevant details
+            $this->audit->log(
+                'restriction.issued',
+                $restriction,
+                $moderator,
+                [
+                    'type' => $type->value,
+                    'account_type' => $account->getMorphClass(),
+                    'account_id' => $account->getKey(),
+                ],
+            );
 
-        // Return the created restriction instance.
-        return $restriction;
+            // After the transaction is committed, trigger the RestrictionIssued event
+            DB::afterCommit(function () use ($restriction): void {
+                event(new RestrictionIssued($restriction));
+            });
+
+            // Return the created restriction instance
+            return $restriction;
+        });
     }
 
     /**
      * Issue a strike to an account.
      *
-     * @param  Model  $account  The account to issue the strike to.
+     * @param  Model  $account  The account receiving the strike.
      * @param  string  $reason  The reason for the strike.
-     * @param  int  $points  The number of points for the strike (default is 1).
+     * @param  int  $points  The number of points for the strike.
      * @param  string|null  $category  The category of the strike (optional).
      * @param  DateTimeInterface|null  $expiresAt  The expiration date of the strike (optional).
      * @param  Model|null  $moderator  The moderator issuing the strike (optional).
      * @param  array<string, mixed>  $metadata  Additional metadata for the strike (optional).
-     * @return Strike The created strike instance.
+     * @return Strike The issued strike instance.
      */
     public function issueStrike(
         Model $account,
@@ -190,59 +250,73 @@ final class EnforcementWriter
         ?Model $moderator = null,
         array $metadata = [],
     ): Strike {
-        // Validate that the number of points for the strike is at least one.
         if ($points < 1) {
-            throw new InvalidArgumentException('Strike points must be at least one.');
+            throw new InvalidArgumentException(
+                'Strike points must be at least one.'
+            );
         }
 
-        // Resolve the expiration date for the strike, if provided, and validate it.
-        $expiresAt = $this->resolveStrikeExpiration(
-            $expiresAt
-        );
+        $expiresAt = $this->resolveStrikeExpiration($expiresAt);
 
-        // Validate the expiration date and category for the strike.
         $this->validateExpiration($expiresAt);
         $this->validateCategory($category);
 
         /** @var class-string<Strike> $modelClass */
         $modelClass = config('exile.models.strike', Strike::class);
 
-        /** @var Strike $strike */
-        $strike = $modelClass::query()->create([
-            'strikeable_type' => $account->getMorphClass(),
-            'strikeable_id' => $account->getKey(),
-            'points' => $points,
-            'category' => $category,
-            'reason' => $reason,
-            'metadata' => $metadata,
-            'issued_by_type' => $moderator?->getMorphClass(),
-            'issued_by_id' => $moderator?->getKey(),
-            'expires_at' => $expiresAt,
-        ]);
+        return DB::transaction(function () use (
+            $modelClass,
+            $account,
+            $reason,
+            $points,
+            $category,
+            $expiresAt,
+            $moderator,
+            $metadata,
+        ): Strike {
+            /** @var Strike $strike */
+            $strike = $modelClass::query()->create([
+                'strikeable_type' => $account->getMorphClass(),
+                'strikeable_id' => $account->getKey(),
+                'points' => $points,
+                'category' => $category,
+                'reason' => $reason,
+                'metadata' => $metadata,
+                'issued_by_type' => $moderator?->getMorphClass(),
+                'issued_by_id' => $moderator?->getKey(),
+                'expires_at' => $expiresAt,
+            ]);
 
-        // Trigger the StrikeIssued event and log the action in the audit log.
-        event(new StrikeIssued($strike));
-        $this->audit->log('strike.issued', $strike, $moderator, [
-            'points' => $points,
-            'account_type' => $account->getMorphClass(),
-            'account_id' => $account->getKey(),
-        ]);
+            $this->audit->log(
+                'strike.issued',
+                $strike,
+                $moderator,
+                [
+                    'points' => $points,
+                    'account_type' => $account->getMorphClass(),
+                    'account_id' => $account->getKey(),
+                ],
+            );
 
-        // Return the created strike instance.
-        return $strike;
+            DB::afterCommit(function () use ($strike): void {
+                event(new StrikeIssued($strike));
+            });
+
+            return $strike;
+        });
     }
 
     /**
      * Issue a warning to an account.
      *
-     * @param  Model  $account  The account to issue the warning to.
+     * @param  Model  $account  The account receiving the warning.
      * @param  string  $reason  The reason for the warning.
-     * @param  WarningSeverity  $severity  The severity level of the warning.
+     * @param  WarningSeverity  $severity  The severity of the warning.
      * @param  string|null  $category  The category of the warning (optional).
      * @param  string|null  $internalNotes  Internal notes for the warning (optional).
      * @param  Model|null  $moderator  The moderator issuing the warning (optional).
      * @param  array<string, mixed>  $metadata  Additional metadata for the warning (optional).
-     * @return Warning The created warning instance.
+     * @return Warning The issued warning instance.
      */
     public function issueWarning(
         Model $account,
@@ -253,35 +327,51 @@ final class EnforcementWriter
         ?Model $moderator = null,
         array $metadata = [],
     ): Warning {
-        // Validate the category for the warning.
         $this->validateCategory($category);
 
         /** @var class-string<Warning> $modelClass */
         $modelClass = config('exile.models.warning', Warning::class);
 
-        /** @var Warning $warning */
-        $warning = $modelClass::query()->create([
-            'warnable_type' => $account->getMorphClass(),
-            'warnable_id' => $account->getKey(),
-            'severity' => $severity,
-            'category' => $category,
-            'reason' => $reason,
-            'internal_notes' => $internalNotes,
-            'metadata' => $metadata,
-            'issued_by_type' => $moderator?->getMorphClass(),
-            'issued_by_id' => $moderator?->getKey(),
-        ]);
+        return DB::transaction(function () use (
+            $modelClass,
+            $account,
+            $reason,
+            $severity,
+            $category,
+            $internalNotes,
+            $moderator,
+            $metadata,
+        ): Warning {
+            /** @var Warning $warning */
+            $warning = $modelClass::query()->create([
+                'warnable_type' => $account->getMorphClass(),
+                'warnable_id' => $account->getKey(),
+                'severity' => $severity,
+                'category' => $category,
+                'reason' => $reason,
+                'internal_notes' => $internalNotes,
+                'metadata' => $metadata,
+                'issued_by_type' => $moderator?->getMorphClass(),
+                'issued_by_id' => $moderator?->getKey(),
+            ]);
 
-        // Trigger the WarningIssued event and log the action in the audit log.
-        event(new WarningIssued($warning));
-        $this->audit->log('warning.issued', $warning, $moderator, [
-            'severity' => $severity->value,
-            'account_type' => $account->getMorphClass(),
-            'account_id' => $account->getKey(),
-        ]);
+            $this->audit->log(
+                'warning.issued',
+                $warning,
+                $moderator,
+                [
+                    'severity' => $severity->value,
+                    'account_type' => $account->getMorphClass(),
+                    'account_id' => $account->getKey(),
+                ],
+            );
 
-        // Return the created warning instance.
-        return $warning;
+            DB::afterCommit(function () use ($warning): void {
+                event(new WarningIssued($warning));
+            });
+
+            return $warning;
+        });
     }
 
     /**
@@ -291,29 +381,41 @@ final class EnforcementWriter
      * @param  Model|null  $moderator  The moderator revoking the ban (optional).
      * @return bool True if the ban was successfully revoked, false otherwise.
      */
-    public function revokeBan(Ban $ban, ?Model $moderator = null): bool
-    {
-        // Check if the ban is already revoked. If so, return true.
+    public function revokeBan(
+        Ban $ban,
+        ?Model $moderator = null
+    ): bool {
         if ($ban->isRevoked()) {
             return true;
         }
 
-        // Update the ban record to mark it as revoked, including the revocation timestamp and the moderator who revoked it.
-        $saved = $ban->forceFill([
-            'revoked_at' => now(),
-            'revoked_by_type' => $moderator?->getMorphClass(),
-            'revoked_by_id' => $moderator?->getKey(),
-        ])->save();
+        return DB::transaction(function () use (
+            $ban,
+            $moderator,
+        ): bool {
+            $saved = $ban->forceFill([
+                'revoked_at' => now(),
+                'revoked_by_type' => $moderator?->getMorphClass(),
+                'revoked_by_id' => $moderator?->getKey(),
+            ])->save();
 
-        // If the ban was successfully revoked, trigger the BanRevoked event, log the action in the audit log, and send notifications.
-        if ($saved) {
-            event(new BanRevoked($ban));
-            $this->audit->log('ban.revoked', $ban, $moderator);
-            $this->notifications->banRevoked($ban);
-        }
+            if (! $saved) {
+                return false;
+            }
 
-        // Return whether the ban was successfully revoked.
-        return $saved;
+            $this->audit->log(
+                'ban.revoked',
+                $ban,
+                $moderator
+            );
+
+            DB::afterCommit(function () use ($ban): void {
+                event(new BanRevoked($ban));
+                $this->notifications->banRevoked($ban);
+            });
+
+            return true;
+        });
     }
 
     /**
@@ -323,28 +425,54 @@ final class EnforcementWriter
      * @param  Model|null  $moderator  The moderator revoking the restriction (optional).
      * @return bool True if the restriction was successfully revoked, false otherwise.
      */
-    public function revokeRestriction(Restriction $restriction, ?Model $moderator = null): bool
-    {
-        // Check if the restriction is already revoked. If so, return true.
+    public function revokeRestriction(
+        Restriction $restriction,
+        ?Model $moderator = null
+    ): bool {
+        // If the restriction is already revoked, return true without making any changes
         if ($restriction->revoked_at !== null) {
             return true;
         }
 
-        // Update the restriction record to mark it as revoked, including the revocation timestamp and the moderator who revoked it.
-        $saved = $restriction->forceFill([
-            'revoked_at' => now(),
-            'revoked_by_type' => $moderator?->getMorphClass(),
-            'revoked_by_id' => $moderator?->getKey(),
-        ])->save();
+        // Use a database transaction to revoke the restriction and log the action
+        return DB::transaction(function () use (
+            $restriction,
+            $moderator,
+        ): bool {
+            // Force-fill the revoked_at, revoked_by_type, and revoked_by_id fields and save the restriction
+            $saved = $restriction->forceFill([
+                'revoked_at' => now(),
+                'revoked_by_type' => $moderator?->getMorphClass(),
+                'revoked_by_id' => $moderator?->getKey(),
+            ])->save();
 
-        // If the restriction was successfully revoked, trigger the RestrictionRevoked event and log the action in the audit log.
-        if ($saved) {
-            event(new RestrictionRevoked($restriction));
-            $this->audit->log('restriction.revoked', $restriction, $moderator);
-        }
+            // If the save operation failed, return false to indicate that the restriction could not be revoked
+            if (! $saved) {
+                return false;
+            }
 
-        // Return whether the restriction was successfully revoked.
-        return $saved;
+            // Log the restriction revocation in the audit log with relevant details
+            $this->audit->log(
+                'restriction.revoked',
+                $restriction,
+                $moderator
+            );
+
+            // After the transaction is committed, trigger the RestrictionRevoked event
+            DB::afterCommit(function () use (
+                $restriction,
+            ): void {
+                // Trigger the RestrictionRevoked event to notify listeners that the restriction has been revoked
+                event(
+                    new RestrictionRevoked(
+                        $restriction
+                    )
+                );
+            });
+
+            // Return true to indicate that the restriction was successfully revoked
+            return true;
+        });
     }
 
     /**
@@ -354,66 +482,85 @@ final class EnforcementWriter
      * @param  Model|null  $moderator  The moderator revoking the strike (optional).
      * @return bool True if the strike was successfully revoked, false otherwise.
      */
-    public function revokeStrike(Strike $strike, ?Model $moderator = null): bool
-    {
-        // Check if the strike is already revoked. If so, return true.
+    public function revokeStrike(
+        Strike $strike,
+        ?Model $moderator = null
+    ): bool {
+        // If the strike is already revoked, return true without making any changes
         if ($strike->revoked_at !== null) {
             return true;
         }
 
-        // Update the strike record to mark it as revoked, including the revocation timestamp and the moderator who revoked it.
-        $saved = $strike->forceFill([
-            'revoked_at' => now(),
-            'revoked_by_type' => $moderator?->getMorphClass(),
-            'revoked_by_id' => $moderator?->getKey(),
-        ])->save();
+        // Use a database transaction to revoke the strike and log the action
+        return DB::transaction(function () use (
+            $strike,
+            $moderator,
+        ): bool {
+            // Force-fill the revoked_at, revoked_by_type, and revoked_by_id fields and save the strike
+            $saved = $strike->forceFill([
+                'revoked_at' => now(),
+                'revoked_by_type' => $moderator?->getMorphClass(),
+                'revoked_by_id' => $moderator?->getKey(),
+            ])->save();
 
-        // If the strike was successfully revoked, log the action in the audit log.
-        if ($saved) {
-            $this->audit->log('strike.revoked', $strike, $moderator);
-        }
+            // If the save operation failed, return false to indicate that the strike could not be revoked
+            if (! $saved) {
+                return false;
+            }
 
-        // Return whether the strike was successfully revoked.
-        return $saved;
+            // Log the strike revocation in the audit log with relevant details
+            $this->audit->log(
+                'strike.revoked',
+                $strike,
+                $moderator
+            );
+
+            // After the transaction is committed, trigger the StrikeRevoked event
+            return true;
+        });
     }
 
     /**
-     * Validate the expiration date of a warning.
+     * Validate an optional expiration date.
      *
-     * @param  ?DateTimeInterface  $expiresAt  The expiration date of the warning (optional).
-     * @return void Returns nothing. Throws an exception if the expiration date is invalid.
+     * @param  DateTimeInterface|null  $expiresAt  The expiration date to validate.
+     * @return void
+     * @throws InvalidArgumentException If the expiration date is in the past.
      */
-    private function validateExpiration(?DateTimeInterface $expiresAt): void
-    {
-        // Validate that the expiration date is in the future if provided.
-        if ($expiresAt !== null && $expiresAt <= now()) {
-            throw new InvalidArgumentException('The expiration date must be in the future.');
+    private function validateExpiration(
+        ?DateTimeInterface $expiresAt
+    ): void {
+        // If an expiration date is provided and it is in the past, throw an exception
+        if (
+            $expiresAt !== null
+            && $expiresAt <= now()
+        ) {
+            throw new InvalidArgumentException(
+                'The expiration date must be in the future.'
+            );
         }
     }
 
     /**
      * Resolve the strike expiration date.
      *
-     * An explicitly supplied expiration date takes precedence over the
-     * configured default expiration period.
-     *
-     * @param  ?DateTimeInterface  $expiresAt  The explicitly supplied expiration date (optional).
-     * @return ?DateTimeInterface The resolved expiration date, or null if no expiration is configured.
+     * @param  DateTimeInterface|null  $expiresAt  The expiration date to resolve.
+     * @return DateTimeInterface|null The resolved expiration date, or null if not applicable.
      */
     private function resolveStrikeExpiration(
         ?DateTimeInterface $expiresAt
     ): ?DateTimeInterface {
-        // If an expiration date is explicitly provided, return it.
+        // If an expiration date is provided, return it as is
         if ($expiresAt !== null) {
             return $expiresAt;
         }
 
-        // Retrieve the configured default expiration period for strikes in days.
+        // If no expiration date is provided, check the configuration for the default strike expiration
         $expireAfterDays = config(
             'exile.strikes.expire_after_days'
         );
 
-        // If the configured expiration period is not a valid positive integer, return null (no expiration).
+        // If the configuration value is not a valid positive integer, return null to indicate no expiration
         if (
             ! is_numeric($expireAfterDays)
             || (int) $expireAfterDays < 1
@@ -421,45 +568,58 @@ final class EnforcementWriter
             return null;
         }
 
-        // Calculate and return the expiration date by adding the configured number of days to the current date and time.
+        // If a valid expiration period is configured, calculate and return the expiration date by adding the specified number of days to the current date and time
         return now()->addDays(
             (int) $expireAfterDays
         );
     }
 
     /**
-     * Validate the provided category against the configured categories.
+     * Validate a configured enforcement category.
      *
      * @param  string|null  $category  The category to validate.
-     *
+     * @return void
      * @throws InvalidArgumentException If the category is not configured.
      */
-    private function validateCategory(?string $category): void
-    {
-        // If no category is provided, no validation is needed.
+    private function validateCategory(
+        ?string $category
+    ): void {
+        // If no category is provided, no validation is needed
         if ($category === null) {
             return;
         }
 
         /** @var list<string> $categories */
-        $categories = config('exile.categories', []);
+        $categories = config(
+            'exile.categories',
+            []
+        );
 
-        // If the configured categories are not empty and the provided category is not in the list, throw an exception.
-        if ($categories !== [] && ! in_array($category, $categories, true)) {
-            throw new InvalidArgumentException('The supplied enforcement category is not configured.');
+        // If categories are configured and the provided category is not in the list, throw an exception
+        if (
+            $categories !== []
+            && ! in_array(
+                $category,
+                $categories,
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'The supplied enforcement category is not configured.'
+            );
         }
     }
 
     /**
-     * Validate the requirements for issuing a ban based on its type.
+     * Validate the identifiers required by a ban type.
      *
-     * @param  BanType  $type  The type of the ban.
-     * @param  Model|null  $account  The account to be banned (if applicable).
-     * @param  string|null  $ipAddress  The IP address to be banned (if applicable).
-     * @param  string|null  $cidr  The CIDR range for a network ban (if applicable).
-     * @param  string|null  $deviceFingerprint  The device fingerprint to be banned (if applicable).
-     *
-     * @throws InvalidArgumentException If any required parameter is missing for the specified ban type.
+     * @param  BanType  $type  The type of ban.
+     * @param  Model|null  $account  The account associated with the ban (optional).
+     * @param  string|null  $ipAddress  The IP address associated with the ban (optional).
+     * @param  string|null  $cidr  The CIDR range associated with the ban (optional).
+     * @param  string|null  $deviceFingerprint  The device fingerprint associated with the ban (optional).
+     * @return void
+     * @throws InvalidArgumentException If any required identifier is missing.
      */
     private function validateBanRequirements(
         BanType $type,
@@ -468,24 +628,63 @@ final class EnforcementWriter
         ?string $cidr,
         ?string $deviceFingerprint,
     ): void {
-        // Validate that the required parameters are provided based on the ban type.
-        if (in_array($type, [BanType::Account, BanType::AccountAndIp, BanType::AccountDeviceAndIp], true) && $account === null) {
-            throw new InvalidArgumentException('This ban type requires an account.');
+        if (
+            in_array(
+                $type,
+                [
+                    BanType::Account,
+                    BanType::AccountAndIp,
+                    BanType::AccountDeviceAndIp,
+                ],
+                true
+            )
+            && $account === null
+        ) {
+            throw new InvalidArgumentException(
+                'This ban type requires an account.'
+            );
         }
 
-        // Validate that the required parameters are provided based on the ban type.
-        if (in_array($type, [BanType::Ip, BanType::AccountAndIp, BanType::AccountDeviceAndIp], true) && $ipAddress === null) {
-            throw new InvalidArgumentException('This ban type requires an IP address.');
+        if (
+            in_array(
+                $type,
+                [
+                    BanType::Ip,
+                    BanType::AccountAndIp,
+                    BanType::AccountDeviceAndIp,
+                ],
+                true
+            )
+            && $ipAddress === null
+        ) {
+            throw new InvalidArgumentException(
+                'This ban type requires an IP address.'
+            );
         }
 
-        // Validate that the required parameters are provided based on the ban type.
-        if ($type === BanType::Network && $cidr === null) {
-            throw new InvalidArgumentException('A network ban requires a CIDR range.');
+        if (
+            $type === BanType::Network
+            && $cidr === null
+        ) {
+            throw new InvalidArgumentException(
+                'A network ban requires a CIDR range.'
+            );
         }
 
-        // Validate that the required parameters are provided based on the ban type.
-        if (in_array($type, [BanType::Device, BanType::AccountDeviceAndIp], true) && $deviceFingerprint === null) {
-            throw new InvalidArgumentException('This ban type requires a device fingerprint.');
+        if (
+            in_array(
+                $type,
+                [
+                    BanType::Device,
+                    BanType::AccountDeviceAndIp,
+                ],
+                true
+            )
+            && $deviceFingerprint === null
+        ) {
+            throw new InvalidArgumentException(
+                'This ban type requires a device fingerprint.'
+            );
         }
     }
 }
