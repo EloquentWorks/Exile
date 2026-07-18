@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $original_name
  * @property string|null $mime_type
  * @property int|null $size_bytes
+ * @property string|null $checksum_sha256
  * @property array<string, mixed>|null $metadata
  * @property-read Model $evidenceable
  * @property-read Model|null $uploadedBy
@@ -28,6 +29,7 @@ class Evidence extends Model
         'original_name',
         'mime_type',
         'size_bytes',
+        'checksum_sha256',
         'metadata',
         'uploaded_by_type',
         'uploaded_by_id',
@@ -67,6 +69,46 @@ class Evidence extends Model
     }
 
     /**
+     * Check if the evidence file has a valid SHA-256 checksum.
+     *
+     * @return bool Returns true if the checksum is valid, false otherwise.
+     */
+    public function hasValidChecksum(): bool
+    {
+        // If the checksum is not set, return false.
+        if ($this->checksum_sha256 === null) {
+            return false;
+        }
+
+        // Open a read stream to the evidence file on the configured disk.
+        $stream = Storage::disk($this->disk)
+            ->readStream($this->path);
+
+        // If the stream could not be opened, return false.
+        if (! is_resource($stream)) {
+            return false;
+        }
+
+        // Initialize a SHA-256 hash context.
+        $hash = hash_init('sha256');
+
+        // Use a try-finally block to ensure the stream is closed after processing.
+        try {
+            if (hash_update_stream($hash, $stream) === false) {
+                return false;
+            }
+
+            // Compare the calculated hash with the stored checksum.
+            return hash_equals(
+                $this->checksum_sha256,
+                hash_final($hash)
+            );
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    /**
      * Get the URL for the evidence file.
      *
      * @return string Returns the URL for the evidence file.
@@ -86,3 +128,4 @@ class Evidence extends Model
         ];
     }
 }
+
