@@ -250,20 +250,24 @@ final class EnforcementWriter
         ?Model $moderator = null,
         array $metadata = [],
     ): Strike {
+        // Validate that the number of points is at least one before proceeding
         if ($points < 1) {
             throw new InvalidArgumentException(
                 'Strike points must be at least one.'
             );
         }
 
+        // Resolve the expiration date for the strike based on the provided value or configuration
         $expiresAt = $this->resolveStrikeExpiration($expiresAt);
 
+        // Validate the expiration date and category before proceeding
         $this->validateExpiration($expiresAt);
         $this->validateCategory($category);
 
         /** @var class-string<Strike> $modelClass */
         $modelClass = config('exile.models.strike', Strike::class);
 
+        // Use a database transaction to create the strike record and log the action
         return DB::transaction(function () use (
             $modelClass,
             $account,
@@ -287,6 +291,7 @@ final class EnforcementWriter
                 'expires_at' => $expiresAt,
             ]);
 
+            // Log the strike issuance in the audit log with relevant details
             $this->audit->log(
                 'strike.issued',
                 $strike,
@@ -298,10 +303,12 @@ final class EnforcementWriter
                 ],
             );
 
+            // After the transaction is committed, trigger the StrikeIssued event
             DB::afterCommit(function () use ($strike): void {
                 event(new StrikeIssued($strike));
             });
 
+            // Return the created strike instance
             return $strike;
         });
     }
@@ -332,6 +339,7 @@ final class EnforcementWriter
         /** @var class-string<Warning> $modelClass */
         $modelClass = config('exile.models.warning', Warning::class);
 
+        // Use a database transaction to create the warning record and log the action
         return DB::transaction(function () use (
             $modelClass,
             $account,
@@ -355,6 +363,7 @@ final class EnforcementWriter
                 'issued_by_id' => $moderator?->getKey(),
             ]);
 
+            // Log the warning issuance in the audit log with relevant details
             $this->audit->log(
                 'warning.issued',
                 $warning,
@@ -366,10 +375,12 @@ final class EnforcementWriter
                 ],
             );
 
+            // After the transaction is committed, trigger the WarningIssued event
             DB::afterCommit(function () use ($warning): void {
                 event(new WarningIssued($warning));
             });
 
+            // Return the created warning instance
             return $warning;
         });
     }
@@ -385,35 +396,42 @@ final class EnforcementWriter
         Ban $ban,
         ?Model $moderator = null
     ): bool {
+        // If the ban is already revoked, return true without making any changes
         if ($ban->isRevoked()) {
             return true;
         }
 
+        // Use a database transaction to revoke the ban and log the action
         return DB::transaction(function () use (
             $ban,
             $moderator,
         ): bool {
+            // Force-fill the revoked_at, revoked_by_type, and revoked_by_id fields and save the ban
             $saved = $ban->forceFill([
                 'revoked_at' => now(),
                 'revoked_by_type' => $moderator?->getMorphClass(),
                 'revoked_by_id' => $moderator?->getKey(),
             ])->save();
 
+            // If the save operation failed, return false to indicate that the ban could not be revoked
             if (! $saved) {
                 return false;
             }
 
+            // Log the ban revocation in the audit log with relevant details
             $this->audit->log(
                 'ban.revoked',
                 $ban,
                 $moderator
             );
 
+            // After the transaction is committed, trigger the BanRevoked event and send notifications
             DB::afterCommit(function () use ($ban): void {
                 event(new BanRevoked($ban));
                 $this->notifications->banRevoked($ban);
             });
 
+            // Return true to indicate that the ban was successfully revoked
             return true;
         });
     }
@@ -628,6 +646,7 @@ final class EnforcementWriter
         ?string $cidr,
         ?string $deviceFingerprint,
     ): void {
+        // Validate that the required identifiers are provided based on the ban type
         if (
             in_array(
                 $type,
@@ -645,6 +664,7 @@ final class EnforcementWriter
             );
         }
 
+        // Validate that an IP address is provided for ban types that require it
         if (
             in_array(
                 $type,
@@ -662,6 +682,7 @@ final class EnforcementWriter
             );
         }
 
+        // Validate that a CIDR range is provided for network bans
         if (
             $type === BanType::Network
             && $cidr === null
@@ -671,6 +692,7 @@ final class EnforcementWriter
             );
         }
 
+        // Validate that a device fingerprint is provided for ban types that require it
         if (
             in_array(
                 $type,
