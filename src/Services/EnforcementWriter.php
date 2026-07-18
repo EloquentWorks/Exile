@@ -524,7 +524,7 @@ final class EnforcementWriter
      * Validate an optional expiration date.
      *
      * @param  DateTimeInterface|null  $expiresAt  The expiration date to validate.
-     * @return void
+     *
      * @throws InvalidArgumentException If the expiration date is in the past.
      */
     private function validateExpiration(
@@ -578,7 +578,7 @@ final class EnforcementWriter
      * Validate a configured enforcement category.
      *
      * @param  string|null  $category  The category to validate.
-     * @return void
+     *
      * @throws InvalidArgumentException If the category is not configured.
      */
     private function validateCategory(
@@ -618,7 +618,7 @@ final class EnforcementWriter
      * @param  string|null  $ipAddress  The IP address associated with the ban (optional).
      * @param  string|null  $cidr  The CIDR range associated with the ban (optional).
      * @param  string|null  $deviceFingerprint  The device fingerprint associated with the ban (optional).
-     * @return void
+     *
      * @throws InvalidArgumentException If any required identifier is missing.
      */
     private function validateBanRequirements(
