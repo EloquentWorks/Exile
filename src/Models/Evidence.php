@@ -128,4 +128,3 @@ class Evidence extends Model
         ];
     }
 }
-

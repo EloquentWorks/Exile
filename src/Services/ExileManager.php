@@ -30,12 +30,12 @@ final class ExileManager
     /**
      * Create a new instance of the ExileManager service.
      *
-     * @param EnforcementWriter $writer The service responsible for writing enforcement actions (bans, restrictions, strikes, warnings).
-     * @param EscalationEngine $escalation The service responsible for evaluating escalation rules based on strikes and other factors.
-     * @param IdentifierHasher $hasher The service responsible for hashing identifiers (IP addresses, device fingerprints) for privacy and security.
-     * @param IpMatcher $ipMatcher The service responsible for matching IP addresses against CIDR ranges for network bans.
-     * @param AuditLogger $audit The service responsible for logging audit events related to enforcement actions.
-     * @param NotificationDispatcher $notifications The service responsible for dispatching notifications related to enforcement actions.
+     * @param  EnforcementWriter  $writer  The service responsible for writing enforcement actions (bans, restrictions, strikes, warnings).
+     * @param  EscalationEngine  $escalation  The service responsible for evaluating escalation rules based on strikes and other factors.
+     * @param  IdentifierHasher  $hasher  The service responsible for hashing identifiers (IP addresses, device fingerprints) for privacy and security.
+     * @param  IpMatcher  $ipMatcher  The service responsible for matching IP addresses against CIDR ranges for network bans.
+     * @param  AuditLogger  $audit  The service responsible for logging audit events related to enforcement actions.
+     * @param  NotificationDispatcher  $notifications  The service responsible for dispatching notifications related to enforcement actions.
      */
     public function __construct(
         private readonly EnforcementWriter $writer,
@@ -49,13 +49,13 @@ final class ExileManager
     /**
      * Issue a ban to a specified account.
      *
-     * @param Model $account The model representing the account to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  Model  $account  The model representing the account to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banAccount(
@@ -83,13 +83,13 @@ final class ExileManager
     /**
      * Issue a ban to a specified IP address.
      *
-     * @param string $ipAddress The IP address to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  string  $ipAddress  The IP address to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banIp(
@@ -117,14 +117,14 @@ final class ExileManager
     /**
      * Issue a ban to a specified account and IP address.
      *
-     * @param Model $account The model representing the account to be banned.
-     * @param string $ipAddress The IP address to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  Model  $account  The model representing the account to be banned.
+     * @param  string  $ipAddress  The IP address to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banAccountAndIp(
@@ -154,13 +154,13 @@ final class ExileManager
     /**
      * Issue a ban to a specified network.
      *
-     * @param string $cidr The CIDR notation representing the network to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  string  $cidr  The CIDR notation representing the network to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banNetwork(
@@ -188,13 +188,13 @@ final class ExileManager
     /**
      * Issue a ban to a specified device.
      *
-     * @param string $deviceFingerprint The fingerprint of the device to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  string  $deviceFingerprint  The fingerprint of the device to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banDevice(
@@ -206,7 +206,7 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban to the specified device with the provided details.                                                                                                                                                                                                              
+        // Use the EnforcementWriter service to issue a ban to the specified device with the provided details.
         return $this->writer->issueBan(
             type: BanType::Device,
             deviceFingerprint: $deviceFingerprint,
@@ -222,15 +222,15 @@ final class ExileManager
     /**
      * Issue a ban to a specified account, device, and IP address.
      *
-     * @param Model $account The model representing the account to be banned.
-     * @param string $ipAddress The IP address to be banned.
-     * @param string $deviceFingerprint The fingerprint of the device to be banned.
-     * @param string|null $reason An optional reason for issuing the ban.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the ban.
-     * @param Model|null $moderator An optional model representing the moderator issuing the ban.
-     * @param string|null $category An optional category for the ban.
-     * @param string|null $internalNotes Optional internal notes related to the ban.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the ban (optional).
+     * @param  Model  $account  The model representing the account to be banned.
+     * @param  string  $ipAddress  The IP address to be banned.
+     * @param  string  $deviceFingerprint  The fingerprint of the device to be banned.
+     * @param  string|null  $reason  An optional reason for issuing the ban.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the ban.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the ban.
+     * @param  string|null  $category  An optional category for the ban.
+     * @param  string|null  $internalNotes  Optional internal notes related to the ban.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the ban (optional).
      * @return Ban Returns the created Ban model instance.
      */
     public function banAccountDeviceAndIp(
@@ -262,7 +262,7 @@ final class ExileManager
     /**
      * Resolve the active ban for a given enforcement context, which may include an account, IP address, and device fingerprint.
      *
-     * @param EnforcementContext $context The context containing the account, IP address, and device fingerprint to check for active bans.
+     * @param  EnforcementContext  $context  The context containing the account, IP address, and device fingerprint to check for active bans.
      * @return Ban|null Returns the active Ban model instance if found, or null if no active ban exists for the provided context.
      */
     public function resolveActiveBan(EnforcementContext $context): ?Ban
@@ -353,9 +353,9 @@ final class ExileManager
     /**
      * Check if a specified account is currently banned, optionally considering the provided IP address and device fingerprint.
      *
-     * @param Model $account The model representing the account to check for bans.
-     * @param string|null $ipAddress An optional IP address to consider when checking for bans.
-     * @param string|null $deviceFingerprint An optional device fingerprint to consider when checking for bans.
+     * @param  Model  $account  The model representing the account to check for bans.
+     * @param  string|null  $ipAddress  An optional IP address to consider when checking for bans.
+     * @param  string|null  $deviceFingerprint  An optional device fingerprint to consider when checking for bans.
      * @return bool Returns true if the account is currently banned, false otherwise.
      */
     public function isBanned(Model $account, ?string $ipAddress = null, ?string $deviceFingerprint = null): bool
@@ -367,13 +367,13 @@ final class ExileManager
     /**
      * Issue a restriction to a specified account.
      *
-     * @param Model $account The model representing the account to which the restriction will be issued.
-     * @param RestrictionType $type The type of restriction to be applied (e.g., Posting, ReadOnly).
-     * @param string|null $reason An optional reason for issuing the restriction.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the restriction.
-     * @param Model|null $moderator An optional model representing the moderator issuing the restriction.
-     * @param string|null $internalNotes Optional internal notes related to the restriction.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the restriction (optional).
+     * @param  Model  $account  The model representing the account to which the restriction will be issued.
+     * @param  RestrictionType  $type  The type of restriction to be applied (e.g., Posting, ReadOnly).
+     * @param  string|null  $reason  An optional reason for issuing the restriction.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the restriction.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the restriction.
+     * @param  string|null  $internalNotes  Optional internal notes related to the restriction.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the restriction (optional).
      * @return Restriction Returns the created Restriction model instance.
      */
     public function restrict(
@@ -400,8 +400,8 @@ final class ExileManager
     /**
      * Retrieve the active restriction for a given account and restriction type.
      *
-     * @param Model $account The model representing the account to check for restrictions.
-     * @param RestrictionType $type The type of restriction to check for (e.g., Posting, ReadOnly).
+     * @param  Model  $account  The model representing the account to check for restrictions.
+     * @param  RestrictionType  $type  The type of restriction to check for (e.g., Posting, ReadOnly).
      * @return Restriction|null Returns the active Restriction model instance if found, or null if no active restriction exists.
      */
     public function activeRestrictionFor(Model $account, RestrictionType $type): ?Restriction
@@ -431,8 +431,8 @@ final class ExileManager
     /**
      * Check if a specified account is currently restricted for a given restriction type.
      *
-     * @param Model $account The model representing the account to check for restrictions.
-     * @param RestrictionType $type The type of restriction to check for (e.g., Posting, ReadOnly).
+     * @param  Model  $account  The model representing the account to check for restrictions.
+     * @param  RestrictionType  $type  The type of restriction to check for (e.g., Posting, ReadOnly).
      * @return bool Returns true if the account has an active restriction of the specified type, false otherwise.
      */
     public function isRestricted(Model $account, RestrictionType $type): bool
@@ -443,13 +443,13 @@ final class ExileManager
     /**
      * Issue a strike to a specified account.
      *
-     * @param Model $account The model representing the account to which the strike will be issued.
-     * @param string $reason The reason for issuing the strike.
-     * @param int|null $points The number of points associated with the strike (optional).
-     * @param string|null $category An optional category for the strike.
-     * @param DateTimeInterface|null $expiresAt An optional expiration date for the strike.
-     * @param Model|null $moderator An optional model representing the moderator issuing the strike.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the strike (optional).
+     * @param  Model  $account  The model representing the account to which the strike will be issued.
+     * @param  string  $reason  The reason for issuing the strike.
+     * @param  int|null  $points  The number of points associated with the strike (optional).
+     * @param  string|null  $category  An optional category for the strike.
+     * @param  DateTimeInterface|null  $expiresAt  An optional expiration date for the strike.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the strike.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the strike (optional).
      * @return Strike Returns the created Strike model instance.
      */
     public function strike(
@@ -482,13 +482,13 @@ final class ExileManager
     /**
      * Issue a warning to a specified account.
      *
-     * @param Model $account The model representing the account to which the warning will be issued.
-     * @param string $reason The reason for issuing the warning.
-     * @param WarningSeverity $severity The severity level of the warning (default is Medium).
-     * @param string|null $category An optional category for the warning.
-     * @param string|null $internalNotes Optional internal notes related to the warning.
-     * @param Model|null $moderator An optional model representing the moderator issuing the warning.
-     * @param array<string, mixed> $metadata Additional metadata to associate with the warning (optional).
+     * @param  Model  $account  The model representing the account to which the warning will be issued.
+     * @param  string  $reason  The reason for issuing the warning.
+     * @param  WarningSeverity  $severity  The severity level of the warning (default is Medium).
+     * @param  string|null  $category  An optional category for the warning.
+     * @param  string|null  $internalNotes  Optional internal notes related to the warning.
+     * @param  Model|null  $moderator  An optional model representing the moderator issuing the warning.
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the warning (optional).
      * @return Warning Returns the created Warning model instance.
      */
     public function warn(
@@ -515,7 +515,7 @@ final class ExileManager
     /**
      * Calculate the total active strike points for a given account.
      *
-     * @param Model $account The model representing the account for which to calculate active strike points.
+     * @param  Model  $account  The model representing the account for which to calculate active strike points.
      * @return int Returns the total number of active strike points for the specified account.
      */
     public function activeStrikePoints(Model $account): int
@@ -534,11 +534,11 @@ final class ExileManager
     /**
      * Register a device fingerprint for a given account.
      *
-     * @param Model $account The model representing the account to which the device fingerprint will be registered.
-     * @param string $fingerprint The device fingerprint to be registered.
-     * @param string|null $ipAddress The IP address associated with the device (optional).
-     * @param string|null $label A label for the device (optional).
-     * @param array<string, mixed> $metadata Additional metadata to associate with the device fingerprint (optional).
+     * @param  Model  $account  The model representing the account to which the device fingerprint will be registered.
+     * @param  string  $fingerprint  The device fingerprint to be registered.
+     * @param  string|null  $ipAddress  The IP address associated with the device (optional).
+     * @param  string|null  $label  A label for the device (optional).
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the device fingerprint (optional).
      * @return DeviceFingerprint Returns the created or updated DeviceFingerprint model instance.
      */
     public function registerDevice(
@@ -582,10 +582,11 @@ final class ExileManager
     /**
      * Submit a ban appeal for a given ban.
      *
-     * @param Ban $ban The ban for which the appeal is being submitted.
-     * @param Model $appellant The model representing the user submitting the appeal.
-     * @param string $message The message provided by the appellant explaining their appeal.
+     * @param  Ban  $ban  The ban for which the appeal is being submitted.
+     * @param  Model  $appellant  The model representing the user submitting the appeal.
+     * @param  string  $message  The message provided by the appellant explaining their appeal.
      * @return BanAppeal Returns the created BanAppeal model instance.
+     *
      * @throws LogicException If ban appeals are disabled or if a pending appeal already exists for this ban.
      * @throws InvalidArgumentException If the appeal message is empty or exceeds the maximum allowed length.
      */
@@ -634,11 +635,12 @@ final class ExileManager
     /**
      * Resolve a pending appeal by approving or denying it.
      *
-     * @param BanAppeal $appeal The appeal to be resolved.
-     * @param AppealStatus $status The status to set for the appeal (Approved or Denied).
-     * @param Model $reviewer The model representing the user who is resolving the appeal.
-     * @param string|null $response An optional response message from the reviewer.
+     * @param  BanAppeal  $appeal  The appeal to be resolved.
+     * @param  AppealStatus  $status  The status to set for the appeal (Approved or Denied).
+     * @param  Model  $reviewer  The model representing the user who is resolving the appeal.
+     * @param  string|null  $response  An optional response message from the reviewer.
      * @return bool Returns true if the appeal was successfully resolved, false otherwise.
+     *
      * @throws LogicException If the appeal is not in a pending state and cannot be resolved.
      * @throws InvalidArgumentException If the provided status is not Approved or Denied.
      */
@@ -688,9 +690,10 @@ final class ExileManager
     /**
      * Withdraw a pending appeal.
      *
-     * @param BanAppeal $appeal The appeal to be withdrawn.
-     * @param Model $appellant The model representing the user who is withdrawing the appeal.
+     * @param  BanAppeal  $appeal  The appeal to be withdrawn.
+     * @param  Model  $appellant  The model representing the user who is withdrawing the appeal.
      * @return bool Returns true if the appeal was successfully withdrawn, false otherwise.
+     *
      * @throws LogicException If the appeal is not in a pending state and cannot be withdrawn.
      */
     public function withdrawAppeal(BanAppeal $appeal, Model $appellant): bool
@@ -718,15 +721,15 @@ final class ExileManager
     /**
      * Attach an existing evidence file to the specified subject.
      *
-     * @param Model $subject The model to which the evidence will be attached.
-     * @param string $disk The name of the disk where the evidence file is stored.
-     * @param string $path The path to the evidence file on the specified disk.
-     * @param string|null $originalName The original name of the evidence file (optional).
-     * @param string|null $mimeType The MIME type of the evidence file (optional).
-     * @param int|null $sizeBytes The size of the evidence file in bytes (optional).
-     * @param Model|null $uploadedBy The model representing the user who uploaded the evidence (optional).
-     * @param array<string, mixed> $metadata Additional metadata to associate with the evidence (optional).
-     * @param string|null $checksumSha256 The SHA-256 checksum of the evidence file (optional).
+     * @param  Model  $subject  The model to which the evidence will be attached.
+     * @param  string  $disk  The name of the disk where the evidence file is stored.
+     * @param  string  $path  The path to the evidence file on the specified disk.
+     * @param  string|null  $originalName  The original name of the evidence file (optional).
+     * @param  string|null  $mimeType  The MIME type of the evidence file (optional).
+     * @param  int|null  $sizeBytes  The size of the evidence file in bytes (optional).
+     * @param  Model|null  $uploadedBy  The model representing the user who uploaded the evidence (optional).
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the evidence (optional).
+     * @param  string|null  $checksumSha256  The SHA-256 checksum of the evidence file (optional).
      * @return Evidence Returns the created Evidence model instance.
      */
     public function attachEvidence(
@@ -768,11 +771,12 @@ final class ExileManager
     /**
      * Store an uploaded evidence file and attach it to the specified subject.
      *
-     * @param Model $subject The model to which the evidence will be attached.
-     * @param UploadedFile $file The uploaded file to be stored as evidence.
-     * @param Model|null $uploadedBy The model representing the user who uploaded the evidence (optional).
-     * @param array<string, mixed> $metadata Additional metadata to associate with the evidence (optional).
+     * @param  Model  $subject  The model to which the evidence will be attached.
+     * @param  UploadedFile  $file  The uploaded file to be stored as evidence.
+     * @param  Model|null  $uploadedBy  The model representing the user who uploaded the evidence (optional).
+     * @param  array<string, mixed>  $metadata  Additional metadata to associate with the evidence (optional).
      * @return Evidence Returns the created Evidence model instance.
+     *
      * @throws InvalidArgumentException If the uploaded file exceeds the maximum allowed size.
      * @throws LogicException If the evidence file cannot be stored or if the checksum cannot be calculated.
      */
@@ -832,9 +836,10 @@ final class ExileManager
     /**
      * Calculate the SHA-256 checksum of a stored file on the specified disk.
      *
-     * @param string $disk The name of the disk where the file is stored.
-     * @param string $path The path to the file on the specified disk.
+     * @param  string  $disk  The name of the disk where the file is stored.
+     * @param  string  $path  The path to the file on the specified disk.
      * @return string The calculated SHA-256 checksum of the file.
+     *
      * @throws LogicException If the file cannot be read or if the checksum cannot be calculated.
      */
     private function checksumStoredFile(
@@ -874,8 +879,8 @@ final class ExileManager
     /**
      * Delete an evidence record and optionally remove the associated file from storage.
      *
-     * @param Evidence $evidence The evidence record to delete.
-     * @param bool $deleteFile Whether to delete the associated file from storage (default: true).
+     * @param  Evidence  $evidence  The evidence record to delete.
+     * @param  bool  $deleteFile  Whether to delete the associated file from storage (default: true).
      * @return bool Returns true if the evidence record was successfully deleted, false otherwise.
      */
     public function deleteEvidence(Evidence $evidence, bool $deleteFile = true): bool
@@ -895,8 +900,8 @@ final class ExileManager
     /**
      * Revoke a ban, restriction, or strike.
      *
-     * @param Ban|Restriction|Strike $enforcement The enforcement record to revoke.
-     * @param Model|null $moderator The moderator performing the revocation (optional).
+     * @param  Ban|Restriction|Strike  $enforcement  The enforcement record to revoke.
+     * @param  Model|null  $moderator  The moderator performing the revocation (optional).
      * @return bool Returns true if the enforcement was successfully revoked, false otherwise.
      */
     public function revokeBan(Ban $ban, ?Model $moderator = null): bool
@@ -908,8 +913,8 @@ final class ExileManager
     /**
      * Revoke a restriction.
      *
-     * @param Restriction $restriction The restriction record to revoke.
-     * @param Model|null $moderator The moderator performing the revocation (optional).
+     * @param  Restriction  $restriction  The restriction record to revoke.
+     * @param  Model|null  $moderator  The moderator performing the revocation (optional).
      * @return bool Returns true if the restriction was successfully revoked, false otherwise.
      */
     public function revokeRestriction(Restriction $restriction, ?Model $moderator = null): bool
@@ -921,8 +926,8 @@ final class ExileManager
     /**
      * Revoke a strike.
      *
-     * @param Strike $strike The strike record to revoke.
-     * @param Model|null $moderator The moderator performing the revocation (optional).
+     * @param  Strike  $strike  The strike record to revoke.
+     * @param  Model|null  $moderator  The moderator performing the revocation (optional).
      * @return bool Returns true if the strike was successfully revoked, false otherwise.
      */
     public function revokeStrike(Strike $strike, ?Model $moderator = null): bool
@@ -934,7 +939,7 @@ final class ExileManager
     /**
      * Mark a ban as expired and trigger the appropriate events and notifications.
      *
-     * @param Ban $ban The ban to mark as expired.
+     * @param  Ban  $ban  The ban to mark as expired.
      * @return bool Returns true if the ban was successfully marked as expired, false otherwise.
      */
     public function markBanExpired(Ban $ban): bool
