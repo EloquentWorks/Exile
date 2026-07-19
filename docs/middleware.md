@@ -1,6 +1,6 @@
 # Middleware
 
-Exile registers three configurable middleware aliases.
+Exile registers three configurable aliases.
 
 ## Ban enforcement
 
@@ -10,15 +10,13 @@ Default alias:
 exile
 ```
 
-Usage:
-
 ```php
 Route::middleware(['auth', 'exile'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class);
 });
 ```
 
-The middleware checks the authenticated account and may also check the trusted request IP and configured device header. A matching active ban throws `BannedException`.
+The middleware checks the authenticated account and may also include the trusted request IP and configured device header.
 
 ## Restriction enforcement
 
@@ -27,8 +25,6 @@ Default alias:
 ```text
 exile.allowed
 ```
-
-Usage:
 
 ```php
 Route::post('/posts', StorePostController::class)
@@ -39,7 +35,7 @@ Route::post('/posts', StorePostController::class)
     ]);
 ```
 
-Supported values:
+Supported restriction values:
 
 ```text
 login
@@ -48,11 +44,9 @@ read_only
 shadow
 ```
 
-A matching active restriction throws `RestrictedException`.
+A read-only restriction also blocks posting.
 
-A read-only restriction also blocks posting actions.
-
-## Shadow marking
+## Shadow marker
 
 Default alias:
 
@@ -60,29 +54,19 @@ Default alias:
 exile.shadow
 ```
 
-Usage:
-
 ```php
 Route::post('/comments', StoreCommentController::class)
-    ->middleware(['auth', 'exile.shadow']);
+    ->middleware([
+        'auth',
+        'exile.shadow',
+    ]);
 ```
 
-The middleware adds request attributes rather than blocking:
+This middleware adds request attributes instead of rejecting the request.
 
-```php
-$shadowed = request()->attributes->get(
-    'exile.shadowed',
-    false
-);
+## Ordering
 
-$restriction = request()->attributes->get(
-    'exile.shadow_restriction'
-);
-```
-
-## Middleware ordering
-
-A common route stack is:
+A typical route stack is:
 
 ```php
 Route::middleware([
@@ -95,31 +79,10 @@ Route::middleware([
 });
 ```
 
-Authentication should normally run before Exile so the account is available.
+Authentication normally runs first so the account is available to Exile.
 
-## Exception rendering
+## Error responses
 
-Your application may customize ban and restriction responses in its exception handler or bootstrap exception configuration.
+Applications may customize the rendering of package exceptions through Laravel's exception configuration.
 
-Example JSON response:
-
-```php
-use EloquentWorks\Exile\Exceptions\BannedException;
-use Illuminate\Http\Request;
-
-$exceptions->render(function (
-    BannedException $exception,
-    Request $request
-) {
-    return response()->json(
-        $exception->toArray(),
-        403
-    );
-});
-```
-
-Review the exception API in your installed package before customizing the renderer.
-
-## Trusted proxies
-
-When IP enforcement is enabled behind a proxy, configure Laravel trusted proxies. Otherwise, middleware may see the proxy address instead of the real client address.
+Do not expose internal notes, evidence metadata, staff identity, or private detection rules in blocked responses.

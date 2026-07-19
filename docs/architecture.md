@@ -1,116 +1,139 @@
 # Architecture
 
-Exile separates enforcement decisions, persistence, request enforcement, and application integration.
+Exile separates persistence, enforcement resolution, request middleware, side effects, and maintenance.
 
 ## Main components
 
 ### `Bannable`
 
-The trait is the account-facing API:
+The account-facing trait provides:
 
 ```php
-$user->ban(...);
-$user->restrict(...);
-$user->strike(...);
-$user->warn(...);
+$user->ban();
+$user->banWithIp();
 $user->isBanned();
+$user->restrict();
+$user->isRestricted();
+$user->isShadowBanned();
+$user->strike();
+$user->warn();
+$user->activeStrikePoints();
+$user->registerDeviceFingerprint();
 ```
 
-It also provides polymorphic relationships:
-
-```php
-$user->bans();
-$user->restrictions();
-$user->strikes();
-$user->warnings();
-$user->deviceFingerprints();
-```
+It also exposes polymorphic relationships for bans, restrictions, strikes, warnings, and device observations.
 
 ### `ExileManager`
 
-The manager coordinates higher-level workflows:
+Coordinates high-level workflows:
 
-- account, IP, network, and device bans
+- account, IP, network, device, and combined bans
 - active-ban resolution
 - restrictions
 - warnings and strikes
-- escalation
 - appeals
 - evidence
 - device registration
 - revocation and expiration
 
-Use the manager through dependency injection or the `Exile` facade.
-
 ### `EnforcementWriter`
 
-The writer validates and persists bans, restrictions, warnings, and strikes. It also dispatches events, records audit actions, and triggers supported notifications.
+Validates and persists bans, restrictions, warnings, and strikes.
+
+Database writes and audit records are grouped in transactions. Lifecycle events and notification dispatch are scheduled with `DB::afterCommit()`, so side effects run only after a successful commit.
 
 ### `EnforcementContext`
 
-Middleware builds an enforcement context from:
+Represents the identifiers available during request enforcement:
 
-- the authenticated account
-- the trusted request IP
-- the configured device-fingerprint header
+- authenticated account
+- trusted client IP
+- configured device header
 
-The manager uses that context to resolve a matching active ban.
+### `IdentifierHasher`
 
-### `IdentifierHasher` and `IpMatcher`
+Normalizes IP addresses and creates deterministic keyed hashes for IP and device matching.
 
-- `IdentifierHasher` normalizes and hashes IP addresses and device fingerprints.
-- `IpMatcher` validates and matches IPv4 and IPv6 CIDR ranges.
+### `IpMatcher`
+
+Normalizes and matches IPv4 and IPv6 CIDR ranges.
 
 ### `EscalationEngine`
 
-After a strike is issued, the engine calculates active strike points, finds the highest qualifying threshold that has not already been applied, and creates the configured restriction or ban.
+The engine:
 
-### `AuditLogger`
+1. opens a transaction
+2. locks the affected account row
+3. calculates active strike points
+4. selects the highest newly reached threshold
+5. reserves the account/threshold combination
+6. applies one ban or restriction
+7. records an audit action
 
-The logger writes moderation actions to `exile_actions` when audit logging is enabled.
+The `exile_escalations` table has a unique constraint on account type, account ID, and threshold points.
 
-## Models
+### `NotificationDispatcher`
 
-| Model | Purpose |
-| --- | --- |
-| `Ban` | Account, IP, network, device, or combined ban |
-| `Restriction` | Login, posting, read-only, or shadow restriction |
-| `Strike` | Point-based moderation record |
-| `Warning` | Severity-based warning with acknowledgement |
-| `BanAppeal` | Appeal and review workflow for a ban |
-| `Evidence` | File metadata attached polymorphically to moderation records |
-| `DeviceFingerprint` | Hashed device observation linked to an account |
-| `ModerationAction` | Audit-history entry |
+Creates the configured notification class, dispatches it through Laravel, and optionally reports failures without propagating them.
+
+### `BanNotification`
+
+The shared notification base:
+
+- implements `ShouldQueue`
+- uses Laravel's `Queueable` trait
+- calls `afterCommit()`
+- obtains channels, subject, view, content, and date formatting from config
+- renders a configurable Markdown template
 
 ## Request lifecycle
-
-A typical protected request flows through:
 
 ```text
 HTTP request
     ↓
-EnsureNotBanned middleware
+Authentication
+    ↓
+EnsureNotBanned
     ↓
 EnforcementContext
     ↓
 ExileManager::resolveActiveBan()
     ↓
-BannedException or next middleware
+Optional restriction middleware
     ↓
-Optional restriction / shadow middleware
+Optional shadow marker
     ↓
 Controller
 ```
 
-## Extension points
+## Enforcement write lifecycle
 
-Applications may customize Exile through:
+```text
+Validate
+    ↓
+Begin database transaction
+    ↓
+Create or update enforcement record
+    ↓
+Create audit record
+    ↓
+Commit
+    ↓
+Dispatch lifecycle event
+    ↓
+Queue notification
+```
 
-- replacement models
-- configuration
-- middleware aliases
-- event listeners
-- notification channels
-- policies and authorization
-- custom controllers and admin interfaces
-- metadata and audit context
+## Models
+
+| Model | Purpose |
+| --- | --- |
+| `Ban` | Account, IP, network, device, or combined enforcement |
+| `Restriction` | Capability-specific enforcement |
+| `Strike` | Point-based moderation record |
+| `Warning` | Severity-based warning |
+| `BanAppeal` | Appeal review workflow |
+| `Evidence` | File metadata and SHA-256 checksum |
+| `DeviceFingerprint` | Hashed device observation |
+| `ModerationAction` | Audit-history entry |
+| `AppliedEscalation` | Unique reservation for an applied threshold |

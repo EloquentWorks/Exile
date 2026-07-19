@@ -1,23 +1,19 @@
 # Bans
 
-Exile supports temporary and permanent bans across multiple identifiers.
-
 ## Ban types
 
 ```php
 use EloquentWorks\Exile\Enums\BanType;
 ```
 
-Available values:
-
-| Enum | Value | Target |
-| --- | --- | --- |
-| `BanType::Account` | `account` | Account only |
-| `BanType::Ip` | `ip` | Exact IP address |
-| `BanType::AccountAndIp` | `account_and_ip` | Account and exact IP |
-| `BanType::Network` | `network` | IPv4 or IPv6 CIDR range |
-| `BanType::Device` | `device` | Device fingerprint |
-| `BanType::AccountDeviceAndIp` | `account_device_and_ip` | Account, device, and IP |
+| Type | Target |
+| --- | --- |
+| `Account` | Account only |
+| `Ip` | Exact IP address |
+| `AccountAndIp` | Account and IP combined |
+| `Network` | IPv4 or IPv6 CIDR range |
+| `Device` | Device token |
+| `AccountDeviceAndIp` | Account, device, and IP combined |
 
 ## Account ban
 
@@ -30,20 +26,11 @@ $ban = $user->ban(
     internalNotes: 'Case EX-1042',
     metadata: [
         'case_number' => 'EX-1042',
-        'source' => 'admin-panel',
     ],
 );
 ```
 
-Omit `expiresAt` for a permanent ban:
-
-```php
-$ban = $user->ban(
-    reason: 'Confirmed fraud',
-    moderator: $moderator,
-    category: 'fraud',
-);
-```
+Omit `expiresAt` for permanent enforcement.
 
 ## Account and IP ban
 
@@ -53,55 +40,62 @@ $ban = $user->banWithIp(
     reason: 'Ban evasion',
     expiresAt: now()->addMonth(),
     moderator: $moderator,
-    category: 'ban_evasion',
 );
 ```
 
-## Check enforcement
+## Combined matching semantics
+
+```php
+'security' => [
+    'combined_ban_match' => 'any',
+],
+```
+
+### `any`
+
+A combined ban can match through any stored identifier.
+
+For `AccountAndIp`, either the account or IP may match.
+
+### `all`
+
+Every required identifier must be present and match.
+
+For `AccountAndIp`:
+
+| Account | IP | Match |
+| --- | --- | --- |
+| Correct | Correct | Yes |
+| Correct | Different | No |
+| Different | Correct | No |
+| Different | Different | No |
+
+For `AccountDeviceAndIp`, account, device, and IP must all match.
+
+## Check a ban
 
 ```php
 $user->isBanned();
 
 $user->isBanned(
     ipAddress: $request->ip(),
-    deviceFingerprint: $request->header('X-Device-Fingerprint'),
+    deviceFingerprint: $request->header(
+        'X-Device-Fingerprint'
+    ),
 );
 ```
 
-For request enforcement, prefer the `exile` middleware because it consistently builds the full context.
+For HTTP requests, prefer the `exile` middleware so the enforcement context is built consistently.
 
 ## Query bans
 
 ```php
 use EloquentWorks\Exile\Models\Ban;
 
-$active = Ban::active()->get();
-
-$expired = Ban::expired()->get();
-
-$revoked = Ban::revoked()->get();
-
-$permanent = Ban::permanent()->get();
-```
-
-Account history:
-
-```php
-$history = $user->bans()
-    ->latest()
-    ->get();
-```
-
-## Ban status
-
-```php
-$ban->isActive();
-
-$ban->isExpired();
-
-$ban->isPermanent();
-
-$ban->isRevoked();
+Ban::active()->get();
+Ban::expired()->get();
+Ban::revoked()->get();
+Ban::permanent()->get();
 ```
 
 ## Revoke a ban
@@ -109,17 +103,16 @@ $ban->isRevoked();
 ```php
 use EloquentWorks\Exile\Facades\Exile;
 
-Exile::revokeBan($ban, $moderator);
+Exile::revokeBan(
+    $ban,
+    $moderator
+);
 ```
 
-Revocation preserves the record and records the reviewer and timestamp.
+Revocation preserves the record and moderation history.
 
-## Expiration
+## Transaction behavior
 
-Expired bans stop matching the `active()` scope immediately. The `exile:expire` command records expiration notification state, dispatches `BanExpired`, logs the expiration, and sends the enabled expiration notification.
+Ban creation and audit persistence run in one transaction. The `BanIssued` event and optional notification are scheduled after commit.
 
-## Reasons and internal notes
-
-Use `reason` for text that may be shown to the affected user. Use `internalNotes` for staff-only context.
-
-Your application controls access to both fields and should never expose internal notes through public resources or exception rendering.
+A failed audit write therefore rolls back the ban rather than leaving a partially completed moderation action.

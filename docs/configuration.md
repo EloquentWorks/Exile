@@ -6,9 +6,11 @@ Publish the configuration file:
 php artisan vendor:publish --tag=exile-config
 ```
 
-The published file is located at `config/exile.php`.
+The published file is `config/exile.php`.
 
-## Tables
+## Tables and models
+
+Exile lets applications replace table names and package models:
 
 ```php
 'tables' => [
@@ -20,25 +22,11 @@ The published file is located at `config/exile.php`.
     'evidence' => 'exile_evidence',
     'device_fingerprints' => 'exile_device_fingerprints',
     'actions' => 'exile_actions',
+    'escalations' => 'exile_escalations',
 ],
 ```
 
-Change table names before publishing and running migrations. Changing them afterward requires an application migration.
-
-## Models
-
-```php
-'models' => [
-    'ban' => EloquentWorks\Exile\Models\Ban::class,
-    'restriction' => EloquentWorks\Exile\Models\Restriction::class,
-    'strike' => EloquentWorks\Exile\Models\Strike::class,
-    'warning' => EloquentWorks\Exile\Models\Warning::class,
-    'appeal' => EloquentWorks\Exile\Models\BanAppeal::class,
-    'evidence' => EloquentWorks\Exile\Models\Evidence::class,
-    'device_fingerprint' => EloquentWorks\Exile\Models\DeviceFingerprint::class,
-    'action' => EloquentWorks\Exile\Models\ModerationAction::class,
-],
-```
+Set custom table names before publishing and running migrations.
 
 Replacement models should extend the corresponding Exile model.
 
@@ -46,17 +34,36 @@ Replacement models should extend the corresponding Exile model.
 
 ```php
 'security' => [
-    'hash_key' => env('EXILE_HASH_KEY', env('APP_KEY')),
+    'hash_key' => env(
+        'EXILE_HASH_KEY',
+        env('APP_KEY')
+    ),
     'device_header' => 'X-Device-Fingerprint',
     'trust_request_ip' => true,
+    'combined_ban_match' => 'any',
 ],
 ```
 
-- `hash_key` signs deterministic hashes used for IP and device matching.
-- `device_header` identifies the request header read by middleware.
-- `trust_request_ip` controls whether middleware includes the request IP in its enforcement context.
+### `hash_key`
 
-Use a dedicated `EXILE_HASH_KEY` in production. Configure Laravel trusted proxies correctly before trusting `$request->ip()` behind a load balancer or reverse proxy.
+Used for deterministic keyed hashes of IP addresses and device tokens. Configure a dedicated `EXILE_HASH_KEY` in production.
+
+### `device_header`
+
+The request header used by middleware to obtain a device token.
+
+### `trust_request_ip`
+
+Controls whether middleware includes `$request->ip()` in the enforcement context. Configure trusted proxies correctly before enabling this behind a proxy.
+
+### `combined_ban_match`
+
+Supported values:
+
+- `any`: a combined ban matches any stored identifier.
+- `all`: every identifier required by the combined type must match.
+
+`any` preserves the original package behavior.
 
 ## Categories
 
@@ -73,9 +80,9 @@ Use a dedicated `EXILE_HASH_KEY` in production. Configure Laravel trusted proxie
 ],
 ```
 
-When the list is not empty, Exile rejects ban, strike, or warning categories that are not configured. Pass `null` when no category is needed.
+When categories are configured, unsupported category values are rejected.
 
-## Response messages
+## Response disclosure
 
 ```php
 'responses' => [
@@ -86,7 +93,7 @@ When the list is not empty, Exile rejects ban, strike, or warning categories tha
 ],
 ```
 
-Consider disabling reason output when internal moderation reasons may expose sensitive details.
+Disable reason output when moderation reasons contain private detection details.
 
 ## Notifications
 
@@ -97,12 +104,51 @@ Consider disabling reason output when internal moderation reasons may expose sen
     'issued' => true,
     'revoked' => true,
     'expired' => true,
+    'fail_silently' => true,
+
+    'classes' => [
+        'issued' => BanIssuedNotification::class,
+        'revoked' => BanRevokedNotification::class,
+        'expired' => BanExpiredNotification::class,
+    ],
+
+    'mail' => [
+        'issued' => [
+            'subject' => 'Account enforcement notice',
+            'view' => 'exile::mail.ban-issued',
+            'heading' => 'Your access has been suspended',
+            'intro' => 'A moderation enforcement has been applied to your account.',
+            'reason_label' => 'Reason',
+            'expiration_label' => 'Expires',
+            'permanent_text' => 'This enforcement is permanent.',
+            'action_text' => null,
+            'action_url' => null,
+            'outro' => 'Contact support if you believe this was issued in error.',
+            'salutation' => null,
+        ],
+
+        'date_format' => 'M j, Y g:i A T',
+        'timezone' => null,
+    ],
 ],
 ```
 
-The bundled notification dispatcher currently sends notifications for ban issuance, revocation, and expiration. Appeal workflows dispatch events but do not currently include bundled appeal notification classes.
+`fail_silently` reports notification construction or dispatch errors without reversing an already committed enforcement action.
 
-The affected model must support Laravel notifications.
+Custom notification classes must extend Laravel's `Notification` class and should accept a `Ban` through a constructor parameter named `$ban`.
+
+The action button belongs inside the applicable mail template configuration:
+
+```php
+'notifications' => [
+    'mail' => [
+        'issued' => [
+            'action_text' => 'Appeal this enforcement',
+            'action_url' => 'https://example.test/account/appeals',
+        ],
+    ],
+],
+```
 
 ## Appeals
 
@@ -114,8 +160,6 @@ The affected model must support Laravel notifications.
 ],
 ```
 
-The manager trims and validates appeal messages and can prevent multiple pending appeals for the same ban.
-
 ## Evidence
 
 ```php
@@ -126,21 +170,20 @@ The manager trims and validates appeal messages and can prevent multiple pending
 ],
 ```
 
-Exile checks the configured size limit when `storeEvidence()` is used. Your application should still validate MIME types, extensions, and authorization.
+Use a private disk for moderation evidence. The application should also validate MIME types and authorization.
 
-## Strike defaults
+## Strikes
 
 ```php
 'strikes' => [
     'default_points' => 1,
+    'expire_after_days' => null,
 ],
 ```
 
-`default_points` is used when no explicit point value is passed.
+Set `expire_after_days` to a positive integer to supply a default expiration when one is not passed explicitly.
 
-> If your config still contains `expire_after_days`, either implement it before release or remove it. The current strike writer only uses an explicitly supplied `expiresAt` value.
-
-## Automatic escalation
+## Escalation
 
 ```php
 'escalation' => [
@@ -151,17 +194,22 @@ Exile checks the configured size limit when `storeEvidence()` is used. Your appl
             'action' => 'restriction',
             'type' => 'posting',
             'duration' => 'P1D',
-            'reason' => 'Automatic restriction after accumulating 3 active strike points.',
+            'reason' => 'Automatic posting restriction.',
+        ],
+        [
+            'points' => 10,
+            'action' => 'ban',
+            'type' => 'account',
+            'duration' => 'P30D',
+            'reason' => 'Automatic account ban.',
         ],
     ],
 ],
 ```
 
-- `action` may be `ban` or `restriction`.
-- `type` must match the corresponding enum value.
-- `duration` uses an ISO 8601 interval such as `P1D`, `P7D`, or `P30D`.
-- An empty or invalid duration produces a permanent action.
-- The engine selects the highest qualifying unapplied threshold and applies one escalation action per evaluation.
+Durations use ISO 8601 intervals. An empty or invalid duration produces permanent enforcement.
+
+The engine checks thresholds from highest to lowest and applies at most one newly reached threshold per evaluation.
 
 ## Middleware aliases
 
@@ -173,9 +221,7 @@ Exile checks the configured size limit when `storeEvidence()` is used. Your appl
 ],
 ```
 
-Changing aliases changes the names used in application routes.
-
-## Scheduling
+## Scheduling and retention
 
 ```php
 'schedule' => [
@@ -183,28 +229,14 @@ Changing aliases changes the names used in application routes.
     'expire_frequency' => 'hourly',
     'prune_frequency' => 'daily',
 ],
-```
 
-Supported values are:
-
-- `every_fifteen_minutes`
-- `every_thirty_minutes`
-- `hourly`
-- `daily`
-- `weekly`
-
-Unknown values fall back to hourly.
-
-## Retention
-
-```php
 'retention' => [
     'prune_enabled' => false,
     'days' => 365,
 ],
 ```
 
-Pruning is intentionally disabled by default because moderation history may be legally, operationally, or administratively important.
+Review operational and legal requirements before enabling destructive pruning.
 
 ## Audit logging
 
@@ -213,5 +245,3 @@ Pruning is intentionally disabled by default because moderation history may be l
     'enabled' => true,
 ],
 ```
-
-When enabled, moderation actions are stored in the configured actions table.

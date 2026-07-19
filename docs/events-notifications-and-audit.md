@@ -1,8 +1,8 @@
 # Events, Notifications, and Audit History
 
-## Events
+## Lifecycle events
 
-Exile dispatches these lifecycle events:
+Exile includes:
 
 - `BanIssued`
 - `BanRevoked`
@@ -14,7 +14,7 @@ Exile dispatches these lifecycle events:
 - `AppealSubmitted`
 - `AppealResolved`
 
-Register listeners in the consuming application:
+Example listener:
 
 ```php
 use EloquentWorks\Exile\Events\BanIssued;
@@ -26,24 +26,17 @@ Event::listen(
 );
 ```
 
-Events are useful for:
-
-- application notifications
-- webhooks
-- analytics
-- staff alerts
-- external case systems
-- activity feeds
+Enforcement-writer events are registered with `DB::afterCommit()`. They are not dispatched when the surrounding enforcement transaction rolls back.
 
 ## Bundled notifications
-
-The current package includes:
 
 - `BanIssuedNotification`
 - `BanRevokedNotification`
 - `BanExpiredNotification`
 
-Enable notifications:
+The notifications extend `BanNotification`, implement `ShouldQueue`, use `Queueable`, and call `afterCommit()`.
+
+Enable them:
 
 ```php
 'notifications' => [
@@ -52,24 +45,86 @@ Enable notifications:
     'issued' => true,
     'revoked' => true,
     'expired' => true,
+    'fail_silently' => true,
 ],
 ```
 
-The affected model must support Laravel notifications.
+Run a queue worker:
 
-Appeal events are included, but appeal notification classes are not currently bundled.
+```bash
+php artisan queue:work
+```
+
+## Custom mail templates
+
+Publish the bundled views:
+
+```bash
+php artisan vendor:publish --tag=exile-views
+```
+
+Edit:
+
+```text
+resources/views/vendor/exile/mail/ban-issued.blade.php
+resources/views/vendor/exile/mail/ban-revoked.blade.php
+resources/views/vendor/exile/mail/ban-expired.blade.php
+```
+
+Or point config at any application Markdown view:
+
+```php
+'notifications' => [
+    'mail' => [
+        'issued' => [
+            'subject' => 'Your account was suspended',
+            'view' => 'mail.moderation.suspended',
+            'heading' => 'Account suspended',
+            'intro' => 'Your custom introductory message.',
+            'action_text' => 'Open an appeal',
+            'action_url' => 'https://example.test/appeals',
+        ],
+    ],
+],
+```
+
+## Replace notification classes
+
+```php
+'notifications' => [
+    'classes' => [
+        'issued' => App\Notifications\BanIssued::class,
+        'revoked' => App\Notifications\BanRevoked::class,
+        'expired' => App\Notifications\BanExpired::class,
+    ],
+],
+```
+
+Replacement classes must extend Laravel's `Notification` class and should accept a `Ban` through a constructor argument named `$ban`.
+
+This supports custom mail, database, Slack, SMS, webhook, and push channels.
+
+## Failure behavior
+
+With:
+
+```php
+'fail_silently' => true,
+```
+
+notification-construction and dispatch exceptions are reported without being rethrown. A valid, committed enforcement is not undone because mail delivery failed.
+
+Set it to `false` when the application should surface notification failures immediately.
 
 ## Audit history
 
-When enabled:
+Enable audit logging:
 
 ```php
 'audit' => [
     'enabled' => true,
 ],
 ```
-
-Exile records important activity in `exile_actions`.
 
 Typical action names include:
 
@@ -92,7 +147,7 @@ device.seen
 escalation.applied
 ```
 
-## Query audit records
+Query actions:
 
 ```php
 use EloquentWorks\Exile\Models\ModerationAction;
@@ -102,29 +157,4 @@ $actions = ModerationAction::query()
     ->paginate();
 ```
 
-Filter by subject:
-
-```php
-$actions = ModerationAction::query()
-    ->where('subject_type', $ban->getMorphClass())
-    ->where('subject_id', $ban->getKey())
-    ->latest()
-    ->get();
-```
-
-## Audit context
-
-The `context` attribute stores structured metadata such as:
-
-- ban type
-- category
-- account type and ID
-- strike points
-- escalation threshold
-- evidence ID
-
-Applications may add their own metadata to enforcement records for case references, source systems, or correlation IDs.
-
-## Privacy
-
-Audit data may contain sensitive identifiers and staff activity. Apply authorization, retention, and access logging to moderation dashboards.
+Audit records may contain sensitive staff and moderation context. Protect them with authorization and retention controls.

@@ -1,6 +1,6 @@
 # IP, Network, and Device Enforcement
 
-Identifier bans are useful for abuse prevention, but they should supplement account enforcement rather than replace it.
+Identifier enforcement should supplement account history and human review.
 
 ## Exact IP ban
 
@@ -12,7 +12,6 @@ $ban = Exile::banIp(
     reason: 'Automated abuse',
     expiresAt: now()->addHours(24),
     moderator: $moderator,
-    category: 'abuse',
 );
 ```
 
@@ -29,7 +28,7 @@ $ban = Exile::banNetwork(
 
 IPv4 and IPv6 CIDR ranges are supported.
 
-Network bans can affect innocent users sharing an ISP, mobile carrier, school, workplace, VPN, or proxy. Use narrow ranges and human review.
+Network bans may affect unrelated users behind a shared ISP, mobile carrier, workplace, school, proxy, or VPN. Keep ranges narrow and review them carefully.
 
 ## Device ban
 
@@ -38,11 +37,10 @@ $ban = Exile::banDevice(
     'application-generated-device-token',
     reason: 'Ban evasion',
     moderator: $moderator,
-    category: 'ban_evasion',
 );
 ```
 
-Do not use a browser fingerprint as a sole identity signal. Device signals can change, collide, or be spoofed.
+Do not use a device token as a sole identity signal. Device signals may be reset, shared, or spoofed.
 
 ## Combined account, device, and IP ban
 
@@ -50,17 +48,23 @@ Do not use a browser fingerprint as a sole identity signal. Device signals can c
 $ban = Exile::banAccountDeviceAndIp(
     account: $user,
     ipAddress: $request->ip(),
-    deviceFingerprint: $request->header('X-Device-Fingerprint'),
+    deviceFingerprint: $request->header(
+        'X-Device-Fingerprint'
+    ),
     reason: 'Repeated ban evasion',
     moderator: $moderator,
 );
 ```
 
+With strict matching enabled, all three identifiers must match.
+
 ## Register a device observation
 
 ```php
 $device = $user->registerDeviceFingerprint(
-    fingerprint: $request->header('X-Device-Fingerprint'),
+    fingerprint: $request->header(
+        'X-Device-Fingerprint'
+    ),
     ipAddress: $request->ip(),
     label: 'Chrome on Windows',
     metadata: [
@@ -69,37 +73,13 @@ $device = $user->registerDeviceFingerprint(
 );
 ```
 
-Registration:
+Raw device tokens are not stored.
 
-- stores a keyed fingerprint hash
-- stores the latest IP as a hash
-- records first and last seen timestamps
-- updates the label and metadata when supplied
-- creates an audit action when auditing is enabled
+## Trusted proxies
 
-## Request header
+When IP matching is enabled behind a reverse proxy or load balancer, configure Laravel trusted proxies. Otherwise, the package may receive the proxy address instead of the client address.
 
-The default header is:
-
-```text
-X-Device-Fingerprint
-```
-
-Change it in configuration:
-
-```php
-'security' => [
-    'device_header' => 'X-Client-Device',
-],
-```
-
-Your application is responsible for generating, storing, and sending a suitable device token.
-
-## IP trust and proxies
-
-When `trust_request_ip` is enabled, the ban middleware includes `$request->ip()` in enforcement checks. Configure Laravel trusted proxies correctly before relying on that value.
-
-Disable request-IP checks when the deployment cannot provide a trustworthy client IP:
+Disable request-IP checks when a trustworthy client IP is unavailable:
 
 ```php
 'security' => [
@@ -109,4 +89,4 @@ Disable request-IP checks when the deployment cannot provide a trustworthy clien
 
 ## Hash-key rotation
 
-IP and device matching uses deterministic keyed hashes. Changing `EXILE_HASH_KEY` prevents newly calculated hashes from matching existing records. Plan a migration or invalidate old identifier records before rotating the key.
+Changing `EXILE_HASH_KEY` prevents existing IP and device hashes from matching new requests. Treat rotation as a data migration, not a routine configuration change.

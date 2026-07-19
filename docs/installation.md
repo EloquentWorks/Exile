@@ -8,39 +8,47 @@
 | 12.x | 8.2+ | 10.x |
 | 13.x | 8.3+ | 11.x |
 
-## Install through Composer
+## Install with Composer
 
 ```bash
 composer require eloquent-works/exile
 ```
 
-## Publish configuration and migrations
+## Publish package resources
+
+Publish configuration and migrations:
 
 ```bash
 php artisan exile:install
 ```
 
-Run the migrations separately:
-
-```bash
-php artisan migrate
-```
-
-Or publish and migrate in one command:
+Publish and migrate:
 
 ```bash
 php artisan exile:install --migrate
 ```
 
-Use `--force` only when you intentionally want to overwrite previously published package files:
+Publish the customizable mail templates too:
 
 ```bash
-php artisan exile:install --force
+php artisan exile:install --migrate --views
 ```
 
-> Before the first stable release, use one migration strategy. The recommended strategy for Exile is publish-only migrations because the installer already publishes them. See [Release checklist](release-checklist.md).
+Use `--force` only when intentionally replacing already-published files:
 
-## Add `Bannable` to the account model
+```bash
+php artisan exile:install --force --views
+```
+
+Resources may also be published separately:
+
+```bash
+php artisan vendor:publish --tag=exile-config
+php artisan vendor:publish --tag=exile-migrations
+php artisan vendor:publish --tag=exile-views
+```
+
+## Add the trait
 
 ```php
 <?php
@@ -56,11 +64,11 @@ class User extends Authenticatable
 }
 ```
 
-The trait adds relationships and helpers for bans, restrictions, warnings, strikes, and registered device fingerprints.
+The trait provides relationships and convenience methods for bans, restrictions, warnings, strikes, and device observations.
 
 ## Configure a dedicated hash key
 
-Create a dedicated secret:
+Generate a 32-byte key:
 
 ```bash
 php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
@@ -68,50 +76,51 @@ php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
 
 Add it to `.env`:
 
-```env
-EXILE_HASH_KEY=base64:replace-with-the-generated-value
+```dotenv
+EXILE_HASH_KEY=base64:generated-value
 ```
 
-Do not commit the value.
+Changing the key later prevents existing IP and device hashes from matching newly calculated values.
 
 ## Protect routes
 
-Block active account, IP, network, and device bans:
-
 ```php
-use Illuminate\Support\Facades\Route;
-
 Route::middleware(['auth', 'exile'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class);
 });
 ```
 
-Protect an action from a specific restriction:
-
 ```php
 Route::post('/posts', StorePostController::class)
-    ->middleware(['auth', 'exile', 'exile.allowed:posting']);
+    ->middleware([
+        'auth',
+        'exile',
+        'exile.allowed:posting',
+    ]);
 ```
 
-Mark shadow-banned requests without rejecting them:
+## Configure the queue
 
-```php
-Route::post('/comments', StoreCommentController::class)
-    ->middleware(['auth', 'exile.shadow']);
+The bundled ban notifications implement `ShouldQueue`. When notifications are enabled, configure a queue connection and run a worker:
+
+```bash
+php artisan queue:work
 ```
 
-## Enable scheduled processing
+For local development, `sync` may be used, but an asynchronous queue is recommended in production.
 
-Exile registers its scheduled commands when scheduling is enabled. The consuming Laravel application must still run Laravel's scheduler:
+## Configure the scheduler
+
+The consuming application must run Laravel's scheduler:
 
 ```cron
 * * * * * cd /path/to/application && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-For local development:
+During local development:
 
 ```bash
 php artisan schedule:work
 ```
 
-Continue with [Configuration](configuration.md) and [Bans](bans.md).
+Continue with [Configuration](configuration.md).

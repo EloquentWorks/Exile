@@ -232,20 +232,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Appeal Action
-    |--------------------------------------------------------------------------
-    |
-    | These values are used to generate a link to the appeal workflow in
-    | the issued-ban notification. Applications may replace the URL with a
-    | route to a custom appeal page or workflow.
-    |
-    */
-
-    'action_text' => 'Appeal this enforcement',
-    'action_url' => 'https://example.com/account/appeals',
-
-    /*
-    |--------------------------------------------------------------------------
     | Ban Appeals
     |--------------------------------------------------------------------------
     |

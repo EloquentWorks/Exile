@@ -1,13 +1,11 @@
 # Security
 
-Moderation systems handle sensitive identifiers, staff decisions, and evidence. Treat Exile as security-sensitive infrastructure.
+Exile handles sensitive identifiers, evidence, and staff actions.
 
-## Dedicated hash key
+## Hash key
 
-Configure:
-
-```env
-EXILE_HASH_KEY=base64:your-dedicated-secret
+```dotenv
+EXILE_HASH_KEY=base64:dedicated-secret
 ```
 
 The key is used for deterministic IP and device hashes.
@@ -15,51 +13,35 @@ The key is used for deterministic IP and device hashes.
 Do not:
 
 - commit it
-- expose it to clients
-- log it
-- casually rotate it
+- send it to clients
+- write it to logs
+- rotate it without a migration plan
 
-Changing the key prevents existing identifier hashes from matching newly calculated values. Plan a data migration or invalidate affected records before rotation.
+## IP addresses
 
-## IP addresses and networks
+IP addresses are not reliable identity by themselves. Shared networks, carrier NAT, dynamic addressing, VPNs, and proxies can produce false positives.
 
-Human-readable IP and CIDR values are encrypted at rest where supported by the model casts, while hashes are used for matching.
+Configure trusted proxies before enabling IP enforcement behind infrastructure that forwards client addresses.
 
-IP addresses are not reliable identity by themselves. Shared networks, carrier NAT, VPNs, proxies, and dynamic addressing can produce false positives.
+## Combined bans
 
-## Trusted proxies
-
-Configure Laravel trusted proxies before enabling request-IP enforcement behind:
-
-- Cloudflare
-- AWS load balancers
-- reverse proxies
-- Kubernetes ingress
-- hosting-platform proxies
-
-If the client IP cannot be trusted, set:
+Use `all` when a combined ban should require every stored identifier:
 
 ```php
-'security' => [
-    'trust_request_ip' => false,
-],
+'combined_ban_match' => 'all',
 ```
 
-## Device fingerprints
+Use `any` only when independent matching across combined identifiers is intentional.
 
-Raw device fingerprints are hashed rather than stored.
+## Device tokens
 
-Device signals may be spoofed, reset, or shared. Use them as one factor alongside:
+Raw device tokens are hashed rather than stored. They may still be spoofed, reset, or shared.
 
-- account history
-- IP context
-- user-agent and session history
-- staff review
-- appeal outcomes
+Use device enforcement alongside account history, IP context, staff review, and appeals.
 
-## Evidence storage
+## Evidence
 
-Use a private disk. Require authorization for every download.
+Store evidence on a private disk.
 
 Also consider:
 
@@ -67,34 +49,29 @@ Also consider:
 - malware scanning
 - encrypted object storage
 - short-lived download URLs
+- authorization checks
 - access logs
-- retention and legal holds
+- legal holds
+- checksum verification
 
-## Response disclosure
+## Notifications
 
-`include_reason` and `include_expiration` can reveal moderation data to blocked users. Avoid exposing internal notes, evidence, staff identity, detection rules, or fraud signals.
+Public reasons may be included in emails and blocked responses. Never place internal notes, private detection details, evidence URLs, or staff-only allegations in public reason fields.
 
-## Authorization
+Custom notification classes are application code and should be reviewed like any other security-sensitive integration.
 
-The package provides enforcement primitives, not an admin authorization system. Protect moderation actions with policies, gates, role checks, and audit logging.
+## Transaction boundaries
 
-## Metadata and internal notes
+Enforcement and audit persistence are transactional. Side effects are scheduled after commit. Avoid moving external calls into the database transaction because they cannot be rolled back reliably.
 
-Treat internal notes and metadata as sensitive. Avoid secrets, credentials, unnecessary personal data, or unverified allegations.
+## Escalation
 
-## Pruning and retention
+The applied-escalation table prevents duplicate threshold execution. Keep its unique index intact.
 
-Pruning is destructive. Confirm:
+## Pruning
 
-- appeal windows
-- legal retention
-- incident-response requirements
-- audit policy
-- evidence preservation
-- privacy requirements
+Pruning is destructive. Confirm appeal windows, retention obligations, incident-response needs, and evidence-preservation requirements before enabling it.
 
-before enabling automatic pruning.
+## Vulnerability reporting
 
-## Reporting vulnerabilities
-
-Security vulnerabilities should be reported privately according to the repository's `SECURITY.md`, not through a public issue.
+Report vulnerabilities privately according to the repository's `SECURITY.md`.

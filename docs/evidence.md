@@ -1,6 +1,6 @@
 # Evidence
 
-Evidence can be attached polymorphically to moderation records such as bans, restrictions, warnings, strikes, or appeals.
+Evidence attaches file metadata to moderation records.
 
 ## Store an uploaded file
 
@@ -17,13 +17,16 @@ $evidence = Exile::storeEvidence(
 );
 ```
 
-`storeEvidence()`:
+Exile:
 
-- checks the configured maximum size
-- stores the file on the configured disk and directory
+- validates the configured size limit
+- stores the file on the configured disk
 - records the original name, MIME type, and byte size
+- calculates a SHA-256 checksum
 - links the uploader
-- records an audit action
+- creates an audit action
+
+If checksum calculation or evidence-record creation fails, Exile deletes the newly stored file before rethrowing the error.
 
 ## Attach an existing file
 
@@ -39,41 +42,44 @@ $evidence = Exile::attachEvidence(
     metadata: [
         'source' => 'case-management',
     ],
+    checksumSha256: $checksum,
 );
 ```
 
-This records metadata only. The file must already exist.
+The caller is responsible for supplying a checksum when attaching an existing file.
 
-## Delete evidence
+## Verify integrity
 
-Delete the record and file:
+```php
+if (! $evidence->hasValidChecksum()) {
+    throw new RuntimeException(
+        'The evidence file failed integrity verification.'
+    );
+}
+```
+
+A missing checksum returns `false`. Existing evidence created before checksum support may therefore require a backfill.
+
+## Delete
+
+Delete the record and stored file:
 
 ```php
 Exile::deleteEvidence($evidence);
 ```
 
-Keep the file but delete the database record:
+Keep the file while deleting the database record:
 
 ```php
 Exile::deleteEvidence(
     $evidence,
-    deleteFile: false
+    deleteFile: false,
 );
 ```
 
-## Relationships
+## Secure downloads
 
-```php
-$evidence->evidenceable;
-
-$evidence->uploadedBy;
-
-$ban->evidence;
-```
-
-## Downloading evidence
-
-Evidence should normally use a private filesystem disk. Serve it through an authorized controller:
+Use a private disk and an authorized controller:
 
 ```php
 public function show(Evidence $evidence)
@@ -88,17 +94,13 @@ public function show(Evidence $evidence)
 }
 ```
 
-For cloud disks, an authorized controller may return a short-lived temporary URL.
+## Application validation
 
-## Validation
-
-The package enforces the configured byte-size limit in `storeEvidence()`. The application should additionally validate:
+The consuming application should also enforce:
 
 - allowed MIME types
 - allowed extensions
 - malware scanning
-- authorization
+- moderator authorization
 - case ownership
 - retention requirements
-
-Do not place sensitive evidence on a public disk.

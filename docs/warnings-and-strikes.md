@@ -1,45 +1,28 @@
 # Warnings, Strikes, and Escalation
 
-Warnings communicate moderation decisions. Strikes add active points that can trigger automatic enforcement.
+Warnings communicate moderation decisions. Strikes add points that can trigger automatic enforcement.
 
-## Warning severities
+## Warnings
 
 ```php
 use EloquentWorks\Exile\Enums\WarningSeverity;
-```
 
-Available severities:
-
-- `Info`
-- `Low`
-- `Medium`
-- `High`
-- `Final`
-
-## Issue a warning
-
-```php
 $warning = $user->warn(
     reason: 'Please review the community rules.',
     severity: WarningSeverity::High,
     category: 'spam',
     internalNotes: 'Second warning this month.',
     moderator: $moderator,
-    metadata: [
-        'case_number' => 'EX-1200',
-    ],
 );
 ```
 
-## Acknowledge a warning
+A warning may be acknowledged:
 
 ```php
 $warning->acknowledge();
 ```
 
-The warning model records its acknowledgement timestamp.
-
-## Issue a strike
+## Strikes
 
 ```php
 $strike = $user->strike(
@@ -51,29 +34,19 @@ $strike = $user->strike(
 );
 ```
 
-When `points` is omitted, Exile uses `exile.strikes.default_points`.
+When points are omitted, Exile uses `strikes.default_points`.
 
-## Active point total
+When expiration is omitted and `strikes.expire_after_days` is a positive integer, Exile supplies the configured default expiration.
+
+## Active points
 
 ```php
 $points = $user->activeStrikePoints();
 ```
 
-Only active, non-revoked, non-expired strikes contribute to the total.
+Only active, non-revoked, non-expired strikes count.
 
-## Revoke a strike
-
-```php
-use EloquentWorks\Exile\Facades\Exile;
-
-Exile::revokeStrike($strike, $moderator);
-```
-
-## Automatic escalation
-
-Escalation runs after each new strike when enabled.
-
-Default example:
+## Escalation configuration
 
 ```php
 'escalation' => [
@@ -87,13 +60,6 @@ Default example:
             'reason' => 'Automatic posting restriction.',
         ],
         [
-            'points' => 5,
-            'action' => 'restriction',
-            'type' => 'read_only',
-            'duration' => 'P7D',
-            'reason' => 'Automatic read-only restriction.',
-        ],
-        [
             'points' => 10,
             'action' => 'ban',
             'type' => 'account',
@@ -104,17 +70,33 @@ Default example:
 ],
 ```
 
-The engine:
+## Concurrency safety
 
-1. calculates active points
-2. sorts thresholds from highest to lowest
-3. skips thresholds already applied to the account
-4. applies the highest qualifying threshold
-5. records `escalation.applied`
-6. stops after one action
+Escalation evaluation:
 
-An invalid or empty duration results in a permanent enforcement action. Validate configuration during development.
+1. starts a database transaction
+2. locks the affected account row
+3. calculates active points
+4. sorts thresholds from highest to lowest
+5. reserves the threshold with `insertOrIgnore()`
+6. applies one action
+7. records an audit entry
 
-## Strike expiration configuration
+The `exile_escalations` table contains a unique index on:
 
-The current manager honors an explicit `expiresAt`. If the config contains `expire_after_days`, implement the default-expiration behavior or remove that option before the first stable release.
+```text
+escalatable_type
+escalatable_id
+threshold_points
+```
+
+Concurrent requests therefore cannot reserve the same threshold twice.
+
+## Revoke a strike
+
+```php
+Exile::revokeStrike(
+    $strike,
+    $moderator
+);
+```

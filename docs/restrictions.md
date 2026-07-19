@@ -1,19 +1,19 @@
-# Restrictions and Shadow Bans
+# Restrictions
 
-Restrictions limit specific actions without necessarily blocking the entire account.
+Restrictions block a capability without necessarily blocking all access.
 
-## Restriction types
+## Types
 
 ```php
 use EloquentWorks\Exile\Enums\RestrictionType;
 ```
 
-| Enum | Value | Intended effect |
-| --- | --- | --- |
-| `RestrictionType::Login` | `login` | Block login completion |
-| `RestrictionType::Posting` | `posting` | Block content creation |
-| `RestrictionType::ReadOnly` | `read_only` | Block write actions |
-| `RestrictionType::Shadow` | `shadow` | Mark content for hidden handling |
+| Type | Intended effect |
+| --- | --- |
+| `Login` | Block login completion |
+| `Posting` | Block content creation |
+| `ReadOnly` | Block write actions |
+| `Shadow` | Mark requests for hidden handling |
 
 ## Issue a restriction
 
@@ -23,80 +23,74 @@ $restriction = $user->restrict(
     reason: 'Posting cooldown',
     expiresAt: now()->addDay(),
     moderator: $moderator,
-    internalNotes: 'Escalated after repeated spam.',
+    internalNotes: 'Repeated spam.',
     metadata: [
         'case_number' => 'EX-1104',
     ],
 );
 ```
 
-Omit `expiresAt` for a permanent restriction.
-
-## Check a restriction
+## Check restrictions
 
 ```php
-$user->isRestricted(RestrictionType::Posting);
+$user->isRestricted(
+    RestrictionType::Posting
+);
 
 $user->isShadowBanned();
 ```
 
-A read-only restriction also satisfies a posting-restriction check.
+A read-only restriction also blocks posting actions.
 
-## Protect actions
+## Middleware
 
 ```php
 Route::post('/posts', StorePostController::class)
-    ->middleware('exile.allowed:posting');
-
-Route::post('/login/complete', CompleteLoginController::class)
-    ->middleware('exile.allowed:login');
+    ->middleware([
+        'auth',
+        'exile.allowed:posting',
+    ]);
 ```
 
-Unknown restriction names cause an `InvalidArgumentException`, which helps catch route configuration mistakes.
+```php
+Route::post('/login/complete', CompleteLoginController::class)
+    ->middleware([
+        'auth',
+        'exile.allowed:login',
+    ]);
+```
 
-## Shadow restrictions
+## Shadow handling
 
 ```php
 Route::post('/comments', StoreCommentController::class)
-    ->middleware('exile.shadow');
+    ->middleware([
+        'auth',
+        'exile.shadow',
+    ]);
 ```
 
-The middleware does not reject the request. It adds:
+The middleware sets request attributes:
 
 ```php
-$shadowed = (bool) request()->attributes->get(
-    'exile.shadowed',
-    false
-);
+$shadowed = (bool) request()
+    ->attributes
+    ->get('exile.shadowed', false);
 
-$restriction = request()->attributes->get(
-    'exile.shadow_restriction'
-);
+$restriction = request()
+    ->attributes
+    ->get('exile.shadow_restriction');
 ```
 
-Your controller, job, or service decides how to handle shadowed content.
+Your application decides whether to hide, quarantine, review, or otherwise process shadowed content.
 
-## Query restrictions
-
-```php
-use EloquentWorks\Exile\Models\Restriction;
-
-$active = Restriction::active()->get();
-
-$posting = Restriction::ofType(
-    RestrictionType::Posting
-)->get();
-```
-
-## Revoke a restriction
+## Revoke
 
 ```php
-use EloquentWorks\Exile\Facades\Exile;
-
 Exile::revokeRestriction(
     $restriction,
     $moderator
 );
 ```
 
-The restriction remains available in moderation history.
+Restriction creation, revocation, and audit writes are transactional.

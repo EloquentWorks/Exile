@@ -2,7 +2,7 @@
 
 ## Custom models
 
-Extend the package model:
+Extend the corresponding package model:
 
 ```php
 <?php
@@ -13,7 +13,7 @@ use EloquentWorks\Exile\Models\Ban as BaseBan;
 
 class Ban extends BaseBan
 {
-    // Application-specific relationships or helpers.
+    // Application relationships and helpers.
 }
 ```
 
@@ -25,18 +25,15 @@ Register it:
 ],
 ```
 
-Repeat the pattern for restrictions, strikes, warnings, appeals, evidence, device fingerprints, and moderation actions.
-
-## Custom table names
+## Custom tables
 
 ```php
 'tables' => [
     'bans' => 'moderation_bans',
-    // ...
 ],
 ```
 
-Set names before publishing and running migrations.
+Configure table names before publishing migrations.
 
 ## Custom categories
 
@@ -45,14 +42,10 @@ Set names before publishing and running migrations.
     'spam',
     'harassment',
     'fraud',
-    'cheating',
-    'ban_evasion',
     'chargeback',
     'other',
 ],
 ```
-
-The writer validates configured categories.
 
 ## Custom middleware aliases
 
@@ -64,56 +57,68 @@ The writer validates configured categories.
 ],
 ```
 
-Use the new aliases in routes.
-
-## Dependency injection
-
-Instead of the facade:
+## Custom notification classes
 
 ```php
-use EloquentWorks\Exile\Services\ExileManager;
+'notifications' => [
+    'classes' => [
+        'issued' => App\Notifications\CustomBanIssued::class,
+    ],
+],
+```
 
-final class BanUser
+```php
+<?php
+
+namespace App\Notifications;
+
+use EloquentWorks\Exile\Models\Ban;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Notification;
+
+final class CustomBanIssued extends Notification implements ShouldQueue
 {
-    public function __construct(
-        private ExileManager $exile
-    ) {}
+    use Queueable;
 
-    public function handle(User $user): void
-    {
-        $this->exile->banAccount(
-            account: $user,
-            reason: 'Policy violation',
-        );
+    public function __construct(
+        public readonly Ban $ban
+    ) {
+        $this->afterCommit();
     }
+
+    // Define via(), toMail(), toArray(), etc.
 }
 ```
 
-## Custom notifications
+## Custom templates
 
-Listen to events and send application-specific notifications:
+Publish and edit:
 
-```php
-Event::listen(
-    AppealSubmitted::class,
-    NotifyModerationTeam::class
-);
+```bash
+php artisan vendor:publish --tag=exile-views
 ```
 
-## Custom authorization
+Or choose an application view in config:
 
-Exile does not register admin controllers or policies. Use application policies for:
+```php
+'view' => 'mail.moderation.ban-issued',
+```
 
-- issuing enforcement
-- viewing internal notes
-- reviewing appeals
-- downloading evidence
-- revoking enforcement
-- browsing audit history
+## Custom action button
 
-## Custom metadata
+```php
+'notifications' => [
+    'mail' => [
+        'issued' => [
+            'action_text' => 'Appeal this enforcement',
+            'action_url' => 'https://example.test/appeals',
+        ],
+    ],
+],
+```
 
-Every major enforcement API accepts metadata:
+## Metadata
 
 ```php
 $user->ban(
@@ -126,4 +131,15 @@ $user->ban(
 );
 ```
 
-Use metadata for non-core attributes rather than adding columns for every integration-specific value.
+Use metadata for integration-specific values. Avoid secrets and unnecessary personal data.
+
+## Authorization
+
+Exile does not provide an admin authorization policy. The consuming application controls who may:
+
+- issue or revoke enforcement
+- review appeals
+- read internal notes
+- download evidence
+- browse audit history
+- change escalation settings
