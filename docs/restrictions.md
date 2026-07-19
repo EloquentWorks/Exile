@@ -1,8 +1,8 @@
-# Restrictions
+# 🔒 Restrictions
 
 Restrictions block a capability without necessarily blocking all access.
 
-## Types
+## 🎯 Types
 
 ```php
 use EloquentWorks\Exile\Enums\RestrictionType;
@@ -15,7 +15,7 @@ use EloquentWorks\Exile\Enums\RestrictionType;
 | `ReadOnly` | Block write actions |
 | `Shadow` | Mark requests for hidden handling |
 
-## Issue a restriction
+## 🔒 Issue a restriction
 
 ```php
 $restriction = $user->restrict(
@@ -30,7 +30,7 @@ $restriction = $user->restrict(
 );
 ```
 
-## Check restrictions
+## 🔍 Check restrictions
 
 ```php
 $user->isRestricted(
@@ -42,7 +42,7 @@ $user->isShadowBanned();
 
 A read-only restriction also blocks posting actions.
 
-## Middleware
+## 🧱 Middleware
 
 ```php
 Route::post('/posts', StorePostController::class)
@@ -60,7 +60,7 @@ Route::post('/login/complete', CompleteLoginController::class)
     ]);
 ```
 
-## Shadow handling
+## 👤 Shadow handling
 
 ```php
 Route::post('/comments', StoreCommentController::class)
@@ -84,7 +84,7 @@ $restriction = request()
 
 Your application decides whether to hide, quarantine, review, or otherwise process shadowed content.
 
-## Revoke
+## ♻️ Revoke
 
 ```php
 Exile::revokeRestriction(

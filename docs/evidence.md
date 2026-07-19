@@ -1,8 +1,8 @@
-# Evidence
+# 🔐 Evidence
 
 Evidence attaches file metadata to moderation records.
 
-## Store an uploaded file
+## 📁 Store an uploaded file
 
 ```php
 use EloquentWorks\Exile\Facades\Exile;
@@ -28,7 +28,7 @@ Exile:
 
 If checksum calculation or evidence-record creation fails, Exile deletes the newly stored file before rethrowing the error.
 
-## Attach an existing file
+## 📎 Attach an existing file
 
 ```php
 $evidence = Exile::attachEvidence(
@@ -48,7 +48,7 @@ $evidence = Exile::attachEvidence(
 
 The caller is responsible for supplying a checksum when attaching an existing file.
 
-## Verify integrity
+## ✅ Verify integrity
 
 ```php
 if (! $evidence->hasValidChecksum()) {
@@ -60,7 +60,7 @@ if (! $evidence->hasValidChecksum()) {
 
 A missing checksum returns `false`. Existing evidence created before checksum support may therefore require a backfill.
 
-## Delete
+## 🗑️ Delete
 
 Delete the record and stored file:
 
@@ -77,7 +77,7 @@ Exile::deleteEvidence(
 );
 ```
 
-## Secure downloads
+## 🔒 Secure downloads
 
 Use a private disk and an authorized controller:
 
@@ -94,7 +94,7 @@ public function show(Evidence $evidence)
 }
 ```
 
-## Application validation
+## 🧪 Application validation
 
 The consuming application should also enforce:
 

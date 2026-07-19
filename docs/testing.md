@@ -1,6 +1,6 @@
-# Testing
+# 🧪 Testing
 
-## Quality suite
+## ✅ Quality suite
 
 ```bash
 composer quality
@@ -14,7 +14,7 @@ vendor/bin/phpstan analyse --memory-limit=1G
 vendor/bin/phpunit
 ```
 
-## Required release coverage
+## 📋 Required release coverage
 
 ### Enforcement transactions
 
@@ -87,7 +87,7 @@ php artisan exile:install --migrate
 php artisan exile:install --views
 ```
 
-## Compatibility matrix
+## 🔀 Compatibility matrix
 
 The package's Composer constraints currently support:
 
@@ -116,7 +116,7 @@ Recommended minimum matrix:
   phpunit: '^12.0'
 ```
 
-## Clean-application smoke tests
+## 🔥 Clean-application smoke tests
 
 Test tagged code in clean Laravel 11, 12, and 13 applications:
 

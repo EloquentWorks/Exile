@@ -1,28 +1,28 @@
-# Laravel Exile Documentation
+# 📚 Laravel Exile Documentation
 
 Laravel Exile is a moderation-enforcement toolkit for Laravel applications.
 
-## Start here
+## 🚀 Start here
 
 1. [Installation](installation.md)
 2. [Configuration](configuration.md)
 3. [Architecture](architecture.md)
 
-## Enforcement
+## 🛡️ Enforcement
 
 - [Bans](bans.md)
 - [IP, network, and device enforcement](identifiers.md)
 - [Restrictions](restrictions.md)
 - [Warnings, strikes, and escalation](warnings-and-strikes.md)
 
-## Moderation workflows
+## ⚖️ Moderation workflows
 
 - [Appeals](appeals.md)
 - [Evidence](evidence.md)
 - [Middleware](middleware.md)
 - [Events, notifications, and audit history](events-notifications-and-audit.md)
 
-## Operations and extension
+## 🧰 Operations and extension
 
 - [Commands and scheduling](commands-and-scheduling.md)
 - [Customization](customization.md)
@@ -30,7 +30,7 @@ Laravel Exile is a moderation-enforcement toolkit for Laravel applications.
 - [Testing](testing.md)
 - [Release checklist](release-checklist.md)
 
-## Package concepts
+## 🧩 Package concepts
 
 | Concept | Purpose |
 | --- | --- |

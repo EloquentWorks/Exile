@@ -1,8 +1,8 @@
-# Security
+# 🛡️ Security
 
 Exile handles sensitive identifiers, evidence, and staff actions.
 
-## Hash key
+## 🔑 Hash key
 
 ```dotenv
 EXILE_HASH_KEY=base64:dedicated-secret
@@ -17,13 +17,13 @@ Do not:
 - write it to logs
 - rotate it without a migration plan
 
-## IP addresses
+## 🌐 IP addresses
 
 IP addresses are not reliable identity by themselves. Shared networks, carrier NAT, dynamic addressing, VPNs, and proxies can produce false positives.
 
 Configure trusted proxies before enabling IP enforcement behind infrastructure that forwards client addresses.
 
-## Combined bans
+## 🔗 Combined bans
 
 Use `all` when a combined ban should require every stored identifier:
 
@@ -33,13 +33,13 @@ Use `all` when a combined ban should require every stored identifier:
 
 Use `any` only when independent matching across combined identifiers is intentional.
 
-## Device tokens
+## 💻 Device tokens
 
 Raw device tokens are hashed rather than stored. They may still be spoofed, reset, or shared.
 
 Use device enforcement alongside account history, IP context, staff review, and appeals.
 
-## Evidence
+## 🔐 Evidence
 
 Store evidence on a private disk.
 
@@ -54,24 +54,24 @@ Also consider:
 - legal holds
 - checksum verification
 
-## Notifications
+## ✉️ Notifications
 
 Public reasons may be included in emails and blocked responses. Never place internal notes, private detection details, evidence URLs, or staff-only allegations in public reason fields.
 
 Custom notification classes are application code and should be reviewed like any other security-sensitive integration.
 
-## Transaction boundaries
+## 🔄 Transaction boundaries
 
 Enforcement and audit persistence are transactional. Side effects are scheduled after commit. Avoid moving external calls into the database transaction because they cannot be rolled back reliably.
 
-## Escalation
+## 📈 Escalation
 
 The applied-escalation table prevents duplicate threshold execution. Keep its unique index intact.
 
-## Pruning
+## 🧹 Pruning
 
 Pruning is destructive. Confirm appeal windows, retention obligations, incident-response needs, and evidence-preservation requirements before enabling it.
 
-## Vulnerability reporting
+## 🚨 Vulnerability reporting
 
 Report vulnerabilities privately according to the repository's `SECURITY.md`.

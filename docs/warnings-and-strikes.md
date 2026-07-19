@@ -1,8 +1,8 @@
-# Warnings, Strikes, and Escalation
+# ⚠️ Warnings, Strikes, and Escalation
 
 Warnings communicate moderation decisions. Strikes add points that can trigger automatic enforcement.
 
-## Warnings
+## ⚠️ Warnings
 
 ```php
 use EloquentWorks\Exile\Enums\WarningSeverity;
@@ -22,7 +22,7 @@ A warning may be acknowledged:
 $warning->acknowledge();
 ```
 
-## Strikes
+## ⚠️ Strikes
 
 ```php
 $strike = $user->strike(
@@ -38,7 +38,7 @@ When points are omitted, Exile uses `strikes.default_points`.
 
 When expiration is omitted and `strikes.expire_after_days` is a positive integer, Exile supplies the configured default expiration.
 
-## Active points
+## 📊 Active points
 
 ```php
 $points = $user->activeStrikePoints();
@@ -46,7 +46,7 @@ $points = $user->activeStrikePoints();
 
 Only active, non-revoked, non-expired strikes count.
 
-## Escalation configuration
+## ⚙️ Escalation configuration
 
 ```php
 'escalation' => [
@@ -70,7 +70,7 @@ Only active, non-revoked, non-expired strikes count.
 ],
 ```
 
-## Concurrency safety
+## 🔐 Concurrency safety
 
 Escalation evaluation:
 
@@ -92,7 +92,7 @@ threshold_points
 
 Concurrent requests therefore cannot reserve the same threshold twice.
 
-## Revoke a strike
+## ♻️ Revoke a strike
 
 ```php
 Exile::revokeStrike(

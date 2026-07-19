@@ -1,6 +1,6 @@
-# Bans
+# 🚫 Bans
 
-## Ban types
+## 🎯 Ban types
 
 ```php
 use EloquentWorks\Exile\Enums\BanType;
@@ -15,7 +15,7 @@ use EloquentWorks\Exile\Enums\BanType;
 | `Device` | Device token |
 | `AccountDeviceAndIp` | Account, device, and IP combined |
 
-## Account ban
+## 👤 Account ban
 
 ```php
 $ban = $user->ban(
@@ -32,7 +32,7 @@ $ban = $user->ban(
 
 Omit `expiresAt` for permanent enforcement.
 
-## Account and IP ban
+## 🌐 Account and IP ban
 
 ```php
 $ban = $user->banWithIp(
@@ -43,7 +43,7 @@ $ban = $user->banWithIp(
 );
 ```
 
-## Combined matching semantics
+## 🔗 Combined matching semantics
 
 ```php
 'security' => [
@@ -72,7 +72,7 @@ For `AccountAndIp`:
 
 For `AccountDeviceAndIp`, account, device, and IP must all match.
 
-## Check a ban
+## 🔍 Check a ban
 
 ```php
 $user->isBanned();
@@ -87,7 +87,7 @@ $user->isBanned(
 
 For HTTP requests, prefer the `exile` middleware so the enforcement context is built consistently.
 
-## Query bans
+## 📚 Query bans
 
 ```php
 use EloquentWorks\Exile\Models\Ban;
@@ -98,7 +98,7 @@ Ban::revoked()->get();
 Ban::permanent()->get();
 ```
 
-## Revoke a ban
+## ♻️ Revoke a ban
 
 ```php
 use EloquentWorks\Exile\Facades\Exile;
@@ -111,7 +111,7 @@ Exile::revokeBan(
 
 Revocation preserves the record and moderation history.
 
-## Transaction behavior
+## 🔄 Transaction behavior
 
 Ban creation and audit persistence run in one transaction. The `BanIssued` event and optional notification are scheduled after commit.
 

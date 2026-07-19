@@ -1,8 +1,8 @@
-# Middleware
+# 🧱 Middleware
 
 Exile registers three configurable aliases.
 
-## Ban enforcement
+## 🚫 Ban enforcement
 
 Default alias:
 
@@ -18,7 +18,7 @@ Route::middleware(['auth', 'exile'])->group(function (): void {
 
 The middleware checks the authenticated account and may also include the trusted request IP and configured device header.
 
-## Restriction enforcement
+## 🔒 Restriction enforcement
 
 Default alias:
 
@@ -46,7 +46,7 @@ shadow
 
 A read-only restriction also blocks posting.
 
-## Shadow marker
+## 👤 Shadow marker
 
 Default alias:
 
@@ -64,7 +64,7 @@ Route::post('/comments', StoreCommentController::class)
 
 This middleware adds request attributes instead of rejecting the request.
 
-## Ordering
+## 🔢 Ordering
 
 A typical route stack is:
 
@@ -81,7 +81,7 @@ Route::middleware([
 
 Authentication normally runs first so the account is available to Exile.
 
-## Error responses
+## ⚠️ Error responses
 
 Applications may customize the rendering of package exceptions through Laravel's exception configuration.
 

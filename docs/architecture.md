@@ -1,8 +1,8 @@
-# Architecture
+# 🏗️ Architecture
 
 Exile separates persistence, enforcement resolution, request middleware, side effects, and maintenance.
 
-## Main components
+## 🧩 Main components
 
 ### `Bannable`
 
@@ -86,7 +86,7 @@ The shared notification base:
 - obtains channels, subject, view, content, and date formatting from config
 - renders a configurable Markdown template
 
-## Request lifecycle
+## 🔄 Request lifecycle
 
 ```text
 HTTP request
@@ -106,7 +106,7 @@ Optional shadow marker
 Controller
 ```
 
-## Enforcement write lifecycle
+## 💾 Enforcement write lifecycle
 
 ```text
 Validate
@@ -124,7 +124,7 @@ Dispatch lifecycle event
 Queue notification
 ```
 
-## Models
+## 🗃️ Models
 
 | Model | Purpose |
 | --- | --- |

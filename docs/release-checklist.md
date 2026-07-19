@@ -1,8 +1,8 @@
-# Release Checklist
+# ✅ Release Checklist
 
 This checklist prepares Laravel Exile `v1.1.0`.
 
-## Release blockers
+## 🚧 Release blockers
 
 ### Align README, Composer, and CI
 
@@ -49,7 +49,7 @@ Verify clean installation runs every migration exactly once.
 
 The provider currently loads package migrations and also makes them publishable. Confirm the chosen installation strategy in clean applications and avoid duplicate migration execution.
 
-## Documentation
+## 📚 Documentation
 
 Confirm:
 
@@ -63,7 +63,7 @@ Confirm:
 - no placeholder production URL remains
 - `RELEASE.md` references Exile and `v1.1.0`
 
-## Quality
+## ✅ Quality
 
 ```bash
 composer validate --strict
@@ -79,7 +79,7 @@ composer install \
     --optimize-autoloader
 ```
 
-## Compatibility
+## 🔀 Compatibility
 
 Smoke-test clean applications for:
 
@@ -87,7 +87,7 @@ Smoke-test clean applications for:
 - Laravel 12 / PHP 8.2
 - Laravel 13 / PHP 8.3
 
-## Database checks
+## 🗃️ Database checks
 
 At minimum, run SQLite. Before a broader production claim, also test MySQL and PostgreSQL for:
 
@@ -99,7 +99,7 @@ At minimum, run SQLite. Before a broader production claim, also test MySQL and P
 - unique escalation reservations
 - migrations and rollbacks
 
-## Security review
+## 🔐 Security review
 
 Confirm:
 
@@ -111,7 +111,7 @@ Confirm:
 - evidence downloads require authorization
 - pruning remains opt-in
 
-## Tag
+## 🏷️ Tag
 
 After every check passes:
 
@@ -128,7 +128,7 @@ git push origin v1.1.0
 
 Create a GitHub Release using `RELEASE_NOTES_v1.1.0.md`.
 
-## Post-release
+## 🚀 Post-release
 
 From a clean application:
 

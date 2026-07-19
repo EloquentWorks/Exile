@@ -1,8 +1,8 @@
-# Appeals
+# 📨 Appeals
 
 Appeals allow an affected account to request review of a ban.
 
-## Submit
+## 📤 Submit
 
 ```php
 use EloquentWorks\Exile\Facades\Exile;
@@ -16,7 +16,7 @@ $appeal = Exile::submitAppeal(
 
 Exile trims and validates the message, enforces the configured maximum length, and may prevent multiple pending appeals for one ban.
 
-## Resolve
+## ✅ Resolve
 
 ```php
 use EloquentWorks\Exile\Enums\AppealStatus;
@@ -40,7 +40,7 @@ Exile::resolveAppeal(
 
 Only pending appeals may be resolved. Approval revokes the related ban.
 
-## Withdraw
+## ↩️ Withdraw
 
 ```php
 Exile::withdrawAppeal(
@@ -49,11 +49,11 @@ Exile::withdrawAppeal(
 );
 ```
 
-## Authorization
+## 🔐 Authorization
 
 Exile provides the workflow but does not decide who may submit, view, withdraw, approve, or deny an appeal. Implement Laravel policies or gates in the consuming application.
 
-## Notifications
+## ✉️ Notifications
 
 Appeal lifecycle events are available. The package currently bundles ban-issued, ban-revoked, and ban-expired notifications—not appeal-specific notification classes.
 

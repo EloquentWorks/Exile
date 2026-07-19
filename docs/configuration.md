@@ -1,4 +1,4 @@
-# Configuration
+# ⚙️ Configuration
 
 Publish the configuration file:
 
@@ -8,7 +8,7 @@ php artisan vendor:publish --tag=exile-config
 
 The published file is `config/exile.php`.
 
-## Tables and models
+## 🗃️ Tables and models
 
 Exile lets applications replace table names and package models:
 
@@ -30,7 +30,7 @@ Set custom table names before publishing and running migrations.
 
 Replacement models should extend the corresponding Exile model.
 
-## Security
+## 🔐 Security
 
 ```php
 'security' => [
@@ -65,7 +65,7 @@ Supported values:
 
 `any` preserves the original package behavior.
 
-## Categories
+## 🏷️ Categories
 
 ```php
 'categories' => [
@@ -82,7 +82,7 @@ Supported values:
 
 When categories are configured, unsupported category values are rejected.
 
-## Response disclosure
+## 💬 Response disclosure
 
 ```php
 'responses' => [
@@ -95,7 +95,7 @@ When categories are configured, unsupported category values are rejected.
 
 Disable reason output when moderation reasons contain private detection details.
 
-## Notifications
+## ✉️ Notifications
 
 ```php
 'notifications' => [
@@ -150,7 +150,7 @@ The action button belongs inside the applicable mail template configuration:
 ],
 ```
 
-## Appeals
+## 📨 Appeals
 
 ```php
 'appeals' => [
@@ -160,7 +160,7 @@ The action button belongs inside the applicable mail template configuration:
 ],
 ```
 
-## Evidence
+## 🔐 Evidence
 
 ```php
 'evidence' => [
@@ -172,7 +172,7 @@ The action button belongs inside the applicable mail template configuration:
 
 Use a private disk for moderation evidence. The application should also validate MIME types and authorization.
 
-## Strikes
+## ⚠️ Strikes
 
 ```php
 'strikes' => [
@@ -183,7 +183,7 @@ Use a private disk for moderation evidence. The application should also validate
 
 Set `expire_after_days` to a positive integer to supply a default expiration when one is not passed explicitly.
 
-## Escalation
+## 📈 Escalation
 
 ```php
 'escalation' => [
@@ -211,7 +211,7 @@ Durations use ISO 8601 intervals. An empty or invalid duration produces permanen
 
 The engine checks thresholds from highest to lowest and applies at most one newly reached threshold per evaluation.
 
-## Middleware aliases
+## 🧱 Middleware aliases
 
 ```php
 'middleware' => [
@@ -221,7 +221,7 @@ The engine checks thresholds from highest to lowest and applies at most one newl
 ],
 ```
 
-## Scheduling and retention
+## 🗓️ Scheduling and retention
 
 ```php
 'schedule' => [
@@ -238,7 +238,7 @@ The engine checks thresholds from highest to lowest and applies at most one newl
 
 Review operational and legal requirements before enabling destructive pruning.
 
-## Audit logging
+## 📜 Audit logging
 
 ```php
 'audit' => [

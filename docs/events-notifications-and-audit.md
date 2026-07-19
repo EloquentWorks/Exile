@@ -1,6 +1,6 @@
-# Events, Notifications, and Audit History
+# 📣 Events, Notifications, and Audit History
 
-## Lifecycle events
+## 📣 Lifecycle events
 
 Exile includes:
 
@@ -28,7 +28,7 @@ Event::listen(
 
 Enforcement-writer events are registered with `DB::afterCommit()`. They are not dispatched when the surrounding enforcement transaction rolls back.
 
-## Bundled notifications
+## ✉️ Bundled notifications
 
 - `BanIssuedNotification`
 - `BanRevokedNotification`
@@ -55,7 +55,7 @@ Run a queue worker:
 php artisan queue:work
 ```
 
-## Custom mail templates
+## 🎨 Custom mail templates
 
 Publish the bundled views:
 
@@ -88,7 +88,7 @@ Or point config at any application Markdown view:
 ],
 ```
 
-## Replace notification classes
+## 🔁 Replace notification classes
 
 ```php
 'notifications' => [
@@ -104,7 +104,7 @@ Replacement classes must extend Laravel's `Notification` class and should accept
 
 This supports custom mail, database, Slack, SMS, webhook, and push channels.
 
-## Failure behavior
+## 🧯 Failure behavior
 
 With:
 
@@ -116,7 +116,7 @@ notification-construction and dispatch exceptions are reported without being ret
 
 Set it to `false` when the application should surface notification failures immediately.
 
-## Audit history
+## 📜 Audit history
 
 Enable audit logging:
 

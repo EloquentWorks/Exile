@@ -1,6 +1,6 @@
-# Customization
+# 🎨 Customization
 
-## Custom models
+## 🧬 Custom models
 
 Extend the corresponding package model:
 
@@ -25,7 +25,7 @@ Register it:
 ],
 ```
 
-## Custom tables
+## 🗃️ Custom tables
 
 ```php
 'tables' => [
@@ -35,7 +35,7 @@ Register it:
 
 Configure table names before publishing migrations.
 
-## Custom categories
+## 🏷️ Custom categories
 
 ```php
 'categories' => [
@@ -47,7 +47,7 @@ Configure table names before publishing migrations.
 ],
 ```
 
-## Custom middleware aliases
+## 🧱 Custom middleware aliases
 
 ```php
 'middleware' => [
@@ -57,7 +57,7 @@ Configure table names before publishing migrations.
 ],
 ```
 
-## Custom notification classes
+## ✉️ Custom notification classes
 
 ```php
 'notifications' => [
@@ -91,7 +91,7 @@ final class CustomBanIssued extends Notification implements ShouldQueue
 }
 ```
 
-## Custom templates
+## 🎨 Custom templates
 
 Publish and edit:
 
@@ -105,7 +105,7 @@ Or choose an application view in config:
 'view' => 'mail.moderation.ban-issued',
 ```
 
-## Custom action button
+## 🔘 Custom action button
 
 ```php
 'notifications' => [
@@ -118,7 +118,7 @@ Or choose an application view in config:
 ],
 ```
 
-## Metadata
+## 🧾 Metadata
 
 ```php
 $user->ban(
@@ -133,7 +133,7 @@ $user->ban(
 
 Use metadata for integration-specific values. Avoid secrets and unnecessary personal data.
 
-## Authorization
+## 🔐 Authorization
 
 Exile does not provide an admin authorization policy. The consuming application controls who may:
 

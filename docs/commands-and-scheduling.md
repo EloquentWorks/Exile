@@ -1,6 +1,6 @@
-# Commands and Scheduling
+# 🧰 Commands and Scheduling
 
-## Install
+## 📦 Install
 
 ```bash
 php artisan exile:install
@@ -15,7 +15,7 @@ php artisan exile:install --migrate --views
 php artisan exile:install --force
 ```
 
-## Process expiration
+## ⏰ Process expiration
 
 ```bash
 php artisan exile:expire
@@ -29,7 +29,7 @@ php artisan exile:expire --chunk=1000
 
 The command processes expired enforcement records and performs the package's expiration side effects.
 
-## Prune old data
+## 🧹 Prune old data
 
 ```bash
 php artisan exile:prune
@@ -49,7 +49,7 @@ php artisan exile:prune --force --days=730
 
 Pruning is destructive. Review appeal windows, legal holds, audit policy, and evidence-preservation requirements first.
 
-## Automatic scheduling
+## 📅 Automatic scheduling
 
 ```php
 'schedule' => [
@@ -71,7 +71,7 @@ Local development:
 php artisan schedule:work
 ```
 
-## Queues
+## 📬 Queues
 
 Queued notifications require a worker:
 
