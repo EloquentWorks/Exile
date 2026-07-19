@@ -15,6 +15,10 @@
             "name": "Eloquent Works"
         }
     ],
+    "support": {
+        "issues": "https://github.com/EloquentWorks/Exile/issues",
+        "source": "https://github.com/EloquentWorks/Exile"
+    },
     "require": {
         "php": "^8.2",
         "illuminate/bus": "^11.15|^12.0|^13.0",
