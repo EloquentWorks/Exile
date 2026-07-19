@@ -1,12 +1,12 @@
-# Code of Conduct
+# 🤝 Code of Conduct
 
-## Our Pledge
+## 🌟 Our Pledge
 
 We want this project to be a welcoming and respectful place for everyone.
 
 Anyone contributing to this project is expected to treat others with kindness, patience, and professionalism.
 
-## Expected Behavior
+## ✅ Expected Behavior
 
 Examples of good behavior include:
 
@@ -16,7 +16,7 @@ Examples of good behavior include:
 - Staying focused on the project
 - Helping others learn and improve
 
-## Unacceptable Behavior
+## 🚫 Unacceptable Behavior
 
 Examples of unacceptable behavior include:
 
@@ -26,17 +26,17 @@ Examples of unacceptable behavior include:
 - Sharing private information without permission
 - Any behavior that makes the project unsafe or unwelcoming
 
-## Reporting Issues
+## 📨 Reporting Issues
 
 If you see behavior that violates this Code of Conduct, please contact the project maintainer privately.
 
 Maintainers may remove comments, close issues, reject pull requests, or block users who violate this Code of Conduct.
 
-## Scope
+## 🌐 Scope
 
 This Code of Conduct applies to all project spaces, including issues, pull requests, discussions, and other community interactions.
 
-## Enforcement
+## ⚖️ Enforcement
 
 Maintainers are responsible for keeping the project respectful and productive.
 
