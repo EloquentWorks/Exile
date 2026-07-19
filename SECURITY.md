@@ -1,15 +1,15 @@
-# Security Policy
+# 🔐 Security Policy
 
-## Supported Versions
+## 🧩 Supported Versions
 
 Security updates are provided for the latest stable version of this package.
 
 | Version | Supported |
-| ------- | --------- |
-| Latest  | Yes       |
-| Older versions | No |
+| --- | --- |
+| Latest | ✅ Yes |
+| Older versions | ❌ No |
 
-## Reporting a Vulnerability
+## 🚨 Reporting a Vulnerability
 
 Please do not report security vulnerabilities through public GitHub issues.
 
@@ -23,7 +23,7 @@ Include as much detail as possible:
 - Potential impact
 - Any suggested fix, if available
 
-## Response Process
+## 🛠️ Response Process
 
 After a vulnerability is reported:
 
@@ -32,7 +32,7 @@ After a vulnerability is reported:
 3. A new release will be published when the fix is ready.
 4. Public details may be shared after users have had time to update.
 
-## Responsible Disclosure
+## 🤝 Responsible Disclosure
 
 Please give the maintainer reasonable time to investigate and fix the issue before sharing details publicly.
 
