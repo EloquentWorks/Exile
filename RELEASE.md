@@ -1,66 +1,75 @@
-# Release Process
+# 🚀 Releasing Laravel Exile
 
-This document describes the release workflow for Laravel Exile.
+Laravel Exile follows Semantic Versioning.
 
-## Before releasing
+## 🧭 Prepare
 
-Verify that all of the following pass successfully:
+1. Complete [the release checklist](docs/release-checklist.md).
+2. Update `CHANGELOG.md`.
+3. Update `UPGRADING.md` when users must take action.
+4. Prepare the GitHub release notes.
+5. Confirm the working tree is clean.
 
-``` bash
-composer test
-composer analyse
-vendor/bin/pint --test
+## ✅ Validate
+
+```bash
+composer validate --strict
+composer quality
 ```
 
-Ensure that:
+Test the production dependency set:
 
--   Documentation has been updated.
--   CHANGELOG (if used) reflects the release.
--   Version constraints are correct.
--   `composer.json` metadata is up to date.
--   README examples match the current API.
-
-## Create a release
-
-1.  Commit all changes.
-2.  Create a version tag.
-
-``` bash
-git tag v1.0.0
-git push origin v1.0.0
+```bash
+composer install \
+    --no-dev \
+    --prefer-dist \
+    --optimize-autoloader
 ```
 
-3.  Create a GitHub Release using the new tag.
-4.  Packagist will automatically detect the new release if GitHub
-    integration is enabled.
+Smoke-test supported Laravel versions in clean applications.
 
-## Release checklist
+## 💾 Commit
 
--   PHPUnit passes
--   PHPStan passes
--   Laravel Pint passes
--   No debug code remains
--   Documentation reviewed
--   New features include tests
--   Public API reviewed for backwards compatibility
+```bash
+git add .
+git commit -m "Prepare v1.1.0 release"
+git push
+```
 
-## Versioning
+## 🏷️ Tag
 
-Persona follows Semantic Versioning.
+```bash
+git tag -a v1.1.0 -m "Laravel Exile v1.1.0"
+git push origin v1.1.0
+```
 
--   **MAJOR** --- breaking changes
--   **MINOR** --- new backwards-compatible features
--   **PATCH** --- bug fixes and documentation improvements
+Never move a published stable tag. Create a new version when a released tag needs correction.
 
-Examples:
+## 📣 GitHub Release
 
--   `1.0.0`
--   `1.1.0`
--   `1.1.1`
--   `2.0.0`
+Create a release from `v1.1.0` and use `RELEASE_NOTES_v1.1.0.md`.
 
-## After release
+Suggested title:
 
--   Verify the package appears on Packagist.
--   Verify installation from a fresh Laravel project.
--   Announce the release if desired.
+```text
+v1.1.0 — Enforcement Hardening and Custom Notifications
+```
+
+## 📦 Package Registry
+
+Confirm the package registry receives the tag and resolves:
+
+```bash
+composer show eloquent-works/exile --all
+```
+
+## 🧪 Post-Release Smoke Test
+
+```bash
+composer create-project laravel/laravel exile-smoke
+cd exile-smoke
+composer require eloquent-works/exile:^1.1
+php artisan exile:install --migrate --views
+```
+
+Verify middleware, one enforcement action, one queued notification, one evidence checksum, and one escalation.
