@@ -30,7 +30,7 @@ $user->restrict(
 
 | Package version | PHP | Laravel / Illuminate |
 |---|---:|---:|
-| Current | `^8.2` | `^12.0 || ^13.0` |
+| Current | `^8.2` | `^12.0 \|\| ^13.0` |
 
 > Composer automatically resolves compatible Laravel and Illuminate versions for the consuming application.
 
