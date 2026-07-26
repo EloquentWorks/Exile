@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
 
 /**
+ * Represents an evidence file associated with a moderation action (e.g., Ban, Restriction, Strike, Warning).
+ *
  * @property int $id
  * @property string $disk
  * @property string $path
@@ -20,7 +22,11 @@ use Illuminate\Support\Facades\Storage;
  */
 class Evidence extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'evidenceable_type',
         'evidenceable_id',
@@ -42,7 +48,6 @@ class Evidence extends Model
      */
     public function getTable(): string
     {
-        // Return the table name for this model, which is configurable via the 'exile.tables.evidence' configuration option, defaulting to 'exile_evidence'.
         return (string) config('exile.tables.evidence', 'exile_evidence');
     }
 
@@ -53,7 +58,6 @@ class Evidence extends Model
      */
     public function evidenceable(): MorphTo
     {
-        // Return the polymorphic relationship to the evidenceable model.
         return $this->morphTo();
     }
 
@@ -64,7 +68,6 @@ class Evidence extends Model
      */
     public function uploadedBy(): MorphTo
     {
-        // Return the polymorphic relationship to the entity that uploaded the evidence.
         return $this->morphTo(__FUNCTION__, 'uploaded_by_type', 'uploaded_by_id');
     }
 
@@ -94,9 +97,7 @@ class Evidence extends Model
 
         // Use a try-finally block to ensure the stream is closed after processing.
         try {
-            if (hash_update_stream($hash, $stream) === false) {
-                return false;
-            }
+            hash_update_stream($hash, $stream);
 
             // Compare the calculated hash with the stored checksum.
             return hash_equals(
@@ -115,7 +116,6 @@ class Evidence extends Model
      */
     public function url(): string
     {
-        // Return the URL for the evidence file using the configured disk.
         return Storage::disk($this->disk)->url($this->path);
     }
 

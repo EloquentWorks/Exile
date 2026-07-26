@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
+ * Represents a restriction applied to a user or entity, which may have a type, reason, internal notes, metadata,
+ * expiration date, and revocation information.
+ *
  * @property int $id
  * @property string $restrictable_type
  * @property int|string $restrictable_id
@@ -53,7 +56,6 @@ class Restriction extends Model
      */
     public function getTable(): string
     {
-        // Get the table name for the model from the configuration, defaulting to 'exile_restrictions' if not set.
         return (string) config('exile.tables.restrictions', 'exile_restrictions');
     }
 
@@ -64,7 +66,6 @@ class Restriction extends Model
      */
     public function restrictable(): MorphTo
     {
-        // Return the polymorphic relationship for the restrictable model.
         return $this->morphTo();
     }
 
@@ -75,7 +76,6 @@ class Restriction extends Model
      */
     public function issuedBy(): MorphTo
     {
-        // Return the polymorphic relationship for the model that issued the restriction.
         return $this->morphTo(__FUNCTION__, 'issued_by_type', 'issued_by_id');
     }
 
@@ -86,7 +86,6 @@ class Restriction extends Model
      */
     public function revokedBy(): MorphTo
     {
-        // Return the polymorphic relationship for the model that revoked the restriction.
         return $this->morphTo(__FUNCTION__, 'revoked_by_type', 'revoked_by_id');
     }
 
@@ -103,7 +102,6 @@ class Restriction extends Model
         /** @var MorphMany<Evidence, $this> $relation */
         $relation = $this->morphMany($model, 'evidenceable');
 
-        // Return the polymorphic relationship for the evidence associated with the restriction.
         return $relation;
     }
 
@@ -115,7 +113,6 @@ class Restriction extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        // Scope a query to only include active restrictions.
         return $query
             ->whereNull('revoked_at')
             ->where(function (Builder $query): void {
@@ -132,7 +129,6 @@ class Restriction extends Model
      */
     public function scopeOfType(Builder $query, RestrictionType|string $type): Builder
     {
-        // Scope a query to only include restrictions of a specific type.
         return $query->where('type', $type instanceof RestrictionType ? $type->value : $type);
     }
 
@@ -143,7 +139,6 @@ class Restriction extends Model
      */
     public function isActive(): bool
     {
-        // Determine if the restriction is currently active.
         return $this->revoked_at === null && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
@@ -154,7 +149,6 @@ class Restriction extends Model
      */
     protected function casts(): array
     {
-        // Define the casts for the model attributes.
         return [
             'type' => RestrictionType::class,
             'metadata' => 'array',

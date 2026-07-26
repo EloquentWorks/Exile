@@ -14,7 +14,12 @@ use EloquentWorks\Exile\Services\ExileManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-/** @mixin Model */
+/**
+ * This trait provides functionality for models that can be banned, restricted, issued strikes, warned, and have device fingerprints registered.
+ * It defines relationships to bans, restrictions, strikes, warnings, and device fingerprints, as well as methods to perform these actions.
+ *
+ * @mixin Model
+ */
 trait Bannable
 {
     /**
@@ -121,7 +126,6 @@ trait Bannable
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to ban the account with the provided details.
@@ -157,7 +161,6 @@ trait Bannable
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to ban the account and IP address with the provided details.
@@ -182,7 +185,6 @@ trait Bannable
      */
     public function isBanned(?string $ipAddress = null, ?string $deviceFingerprint = null): bool
     {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to check if the account is banned, considering the optional IP address and device fingerprint.
@@ -208,7 +210,6 @@ trait Bannable
         ?string $internalNotes = null,
         array $metadata = [],
     ): Restriction {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to restrict the account with the provided details.
@@ -231,7 +232,6 @@ trait Bannable
      */
     public function isRestricted(RestrictionType $type): bool
     {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to check if the account is restricted for the specified type.
@@ -268,7 +268,6 @@ trait Bannable
         ?Model $moderator = null,
         array $metadata = [],
     ): Strike {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to issue a strike for the account with the provided details.
@@ -302,7 +301,6 @@ trait Bannable
         ?Model $moderator = null,
         array $metadata = [],
     ): Warning {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to issue a warning for the account with the provided details.
@@ -324,7 +322,6 @@ trait Bannable
      */
     public function activeStrikePoints(): int
     {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to retrieve the total active strike points for the account.
@@ -346,7 +343,6 @@ trait Bannable
         ?string $label = null,
         array $metadata = [],
     ): DeviceFingerprint {
-        /** @var Model $account */
         $account = $this;
 
         // Call the ExileManager service to register the device fingerprint for the account with the provided details.

@@ -72,7 +72,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban for the specified account with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Account,
             account: $account,
@@ -106,7 +105,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban for the specified IP address with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Ip,
             ipAddress: $ipAddress,
@@ -142,7 +140,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban for both the specified account and IP address with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::AccountAndIp,
             account: $account,
@@ -177,7 +174,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban for the specified network CIDR with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Network,
             cidr: $cidr,
@@ -211,7 +207,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a ban for the specified device fingerprint with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Device,
             deviceFingerprint: $deviceFingerprint,
@@ -249,7 +244,6 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
-        // Use the EnforcementWriter service to issue a combined ban for the specified account, IP address, and device fingerprint with the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::AccountDeviceAndIp,
             account: $account,
@@ -729,7 +723,6 @@ final class ExileManager
         ?Model $moderator = null,
         array $metadata = [],
     ): Strike {
-        // Use the EnforcementWriter service to issue a strike for the specified account with the provided reason, points, category, expiration date, moderator, and metadata.
         $strike = $this->writer->issueStrike(
             account: $account,
             reason: $reason,
@@ -860,7 +853,6 @@ final class ExileManager
      */
     public function submitAppeal(Ban $ban, Model $appellant, string $message): BanAppeal
     {
-        // Check if ban appeals are enabled in the configuration
         if (! config('exile.appeals.enabled', true)) {
             throw new LogicException('Ban appeals are disabled.');
         }
@@ -965,7 +957,6 @@ final class ExileManager
      */
     public function withdrawAppeal(BanAppeal $appeal, Model $appellant): bool
     {
-        // Ensure that only the original appellant can withdraw their appeal
         if (! $appeal->isPending()) {
             throw new LogicException('Only pending appeals may be withdrawn.');
         }
@@ -1127,14 +1118,9 @@ final class ExileManager
         // Initialize a SHA-256 hash context.
         $hash = hash_init('sha256');
 
-        // Use a try-finally block to ensure the stream is closed after processing.
         try {
             // Update the hash context with the contents of the file stream.
-            if (hash_update_stream($hash, $stream) === false) {
-                throw new LogicException(
-                    'The evidence checksum could not be calculated.'
-                );
-            }
+            hash_update_stream($hash, $stream);
 
             // Return the final SHA-256 checksum of the file.
             return hash_final($hash);
@@ -1152,7 +1138,6 @@ final class ExileManager
      */
     public function deleteEvidence(Evidence $evidence, bool $deleteFile = true): bool
     {
-        // If the $deleteFile flag is true, delete the associated file from storage.
         if ($deleteFile) {
             Storage::disk($evidence->disk)->delete($evidence->path);
         }
@@ -1173,7 +1158,6 @@ final class ExileManager
      */
     public function revokeBan(Ban $ban, ?Model $moderator = null): bool
     {
-        // Delegate the revocation of the ban to the EnforcementWriter service.
         return $this->writer->revokeBan($ban, $moderator);
     }
 
@@ -1186,7 +1170,6 @@ final class ExileManager
      */
     public function revokeRestriction(Restriction $restriction, ?Model $moderator = null): bool
     {
-        // Delegate the revocation of the restriction to the EnforcementWriter service.
         return $this->writer->revokeRestriction($restriction, $moderator);
     }
 
@@ -1199,7 +1182,6 @@ final class ExileManager
      */
     public function revokeStrike(Strike $strike, ?Model $moderator = null): bool
     {
-        // Delegate the revocation of the strike to the EnforcementWriter service.
         return $this->writer->revokeStrike($strike, $moderator);
     }
 
@@ -1211,7 +1193,6 @@ final class ExileManager
      */
     public function markBanExpired(Ban $ban): bool
     {
-        // If the ban is not expired or has already been marked as expired, return false.
         if (! $ban->isExpired() || $ban->expired_notified_at !== null) {
             return false;
         }

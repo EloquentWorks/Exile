@@ -89,7 +89,7 @@ final class IpMatcher
      * Parses a CIDR range into its network and prefix components.
      *
      * @param  string  $cidr  The CIDR range to parse.
-     * @return array An array containing the network and prefix.
+     * @return array{0: string, 1: int} An array containing the network and prefix.
      *
      * @throws InvalidArgumentException If the CIDR range is invalid.
      */

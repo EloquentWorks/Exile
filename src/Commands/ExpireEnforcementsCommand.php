@@ -13,10 +13,18 @@ use Illuminate\Console\Command;
  */
 final class ExpireEnforcementsCommand extends Command
 {
-    /** @var string The name and signature of the console command. */
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = 'exile:expire {--chunk=500 : Records processed per chunk}';
 
-    /** @var string The console command description. */
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Process newly expired bans and restrictions.';
 
     /**
@@ -54,7 +62,8 @@ final class ExpireEnforcementsCommand extends Command
             ->whereNull('expired_notified_at')
             ->chunkById($chunk, function ($records) use (&$bans): void {
                 foreach ($records as $ban) {
-                    if ($ban instanceof Ban && $this->exile->markBanExpired($ban)) {
+                    // Mark the ban as expired and log the event
+                    if ($this->exile->markBanExpired($ban)) {
                         $bans++;
                     }
                 }
@@ -71,11 +80,6 @@ final class ExpireEnforcementsCommand extends Command
             ->whereNull('expired_notified_at')
             ->chunkById($chunk, function ($records) use (&$restrictions): void {
                 foreach ($records as $restriction) {
-                    // Check if the record is an instance of Restriction
-                    if (! $restriction instanceof Restriction) {
-                        continue;
-                    }
-
                     // Mark the restriction as expired and log the event
                     if ($restriction->forceFill(['expired_notified_at' => now()])->save()) {
                         $this->audit->log('restriction.expired', $restriction);

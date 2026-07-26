@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
+ * Represents a strike issued to a user or entity, which may have points, a category, a reason, and optional metadata.
+ *
  * @property int $id
  * @property string $strikeable_type
  * @property int|string $strikeable_id
@@ -57,7 +59,6 @@ class Strike extends Model
      */
     public function strikeable(): MorphTo
     {
-        // Return a polymorphic relationship to the model that this strike is associated with.
         return $this->morphTo();
     }
 
@@ -79,7 +80,6 @@ class Strike extends Model
      */
     public function revokedBy(): MorphTo
     {
-        // Return a polymorphic relationship to the model that revoked this strike.
         return $this->morphTo(__FUNCTION__, 'revoked_by_type', 'revoked_by_id');
     }
 
@@ -96,14 +96,17 @@ class Strike extends Model
         /** @var MorphMany<Evidence, $this> $relation */
         $relation = $this->morphMany($model, 'evidenceable');
 
-        // Return the polymorphic relationship to the evidence associated with this strike.
         return $relation;
     }
 
-    /** @param Builder<static> $query @return Builder<static> */
+    /**
+     * Scope a query to only include active strikes (not revoked and not expired).
+     *
+     * @param  Builder<Strike>  $query
+     * @return Builder<Strike>
+     */
     public function scopeActive(Builder $query): Builder
     {
-        // Return a query builder that filters for active strikes (not revoked and not expired).
         return $query
             ->whereNull('revoked_at')
             ->where(function (Builder $query): void {
@@ -118,7 +121,6 @@ class Strike extends Model
      */
     public function isActive(): bool
     {
-        // Return true if the strike is active (not revoked and not expired), false otherwise.
         return $this->revoked_at === null && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
@@ -129,7 +131,6 @@ class Strike extends Model
      */
     protected function casts(): array
     {
-        // Return an array of attribute casts for the model.
         return [
             'points' => 'integer',
             'metadata' => 'array',

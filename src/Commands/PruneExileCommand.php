@@ -12,10 +12,23 @@ use EloquentWorks\Exile\Models\Warning;
 use EloquentWorks\Exile\Services\ExileManager;
 use Illuminate\Console\Command;
 
+/**
+ * Command to prune old Exile moderation records and their evidence.
+ */
 final class PruneExileCommand extends Command
 {
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
     protected $signature = 'exile:prune {--days= : Override retention days} {--force : Prune even when disabled in config}';
 
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
     protected $description = 'Prune old Exile moderation records and their evidence.';
 
     public function __construct(private readonly ExileManager $exile)
@@ -45,14 +58,11 @@ final class PruneExileCommand extends Command
             })
             ->chunkById(200, function ($records) use (&$count): void {
                 foreach ($records as $ban) {
-                    if (! $ban instanceof Ban) {
-                        continue;
-                    }
-
                     foreach ($ban->evidence as $evidence) {
                         $this->exile->deleteEvidence($evidence);
                     }
 
+                    // Delete the ban record itself
                     $ban->delete();
                     $count++;
                 }
