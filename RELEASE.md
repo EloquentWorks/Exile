@@ -5,10 +5,8 @@ Laravel Exile follows Semantic Versioning.
 ## 🧭 Prepare
 
 1. Complete [the release checklist](docs/release-checklist.md).
-2. Update `CHANGELOG.md`.
-3. Update `UPGRADING.md` when users must take action.
-4. Prepare the GitHub release notes.
-5. Confirm the working tree is clean.
+2. Prepare the GitHub release notes.
+3. Confirm the working tree is clean.
 
 ## ✅ Validate
 
@@ -47,7 +45,7 @@ Never move a published stable tag. Create a new version when a released tag need
 
 ## 📣 GitHub Release
 
-Create a release from `v1.1.0` and use `RELEASE_NOTES_v1.1.0.md`.
+Create a release notes page.
 
 Suggested title:
 
