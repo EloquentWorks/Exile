@@ -10,15 +10,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Middleware to ensure that the user is not banned.
- */
 final class EnsureNotBanned
 {
     /**
      * Create a new middleware instance.
      *
      * @param  ExileManager  $exile  The ExileManager instance.
+     * @return void
      */
     public function __construct(private readonly ExileManager $exile) {}
 
@@ -28,7 +26,6 @@ final class EnsureNotBanned
      * @param  Request  $request  The incoming HTTP request.
      * @param  Closure  $next  The next middleware in the pipeline.
      * @return Response The HTTP response after processing the request.
-     *
      * @throws BannedException If the user is banned.
      */
     public function handle(Request $request, Closure $next): Response

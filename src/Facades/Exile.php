@@ -8,8 +8,14 @@ use Illuminate\Support\Facades\Facade;
 /** @see ExileManager */
 final class Exile extends Facade
 {
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
     protected static function getFacadeAccessor(): string
     {
+        // Get the Facade accessor for the ExileManager service.
         return ExileManager::class;
     }
 }

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace EloquentWorks\Exile\Middleware;
 
 use Closure;
@@ -11,15 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Middleware to mark requests from shadow-banned users.
- */
 final class MarkShadowBanned
 {
     /**
      * Constructor.
      *
      * @param  ExileManager  $exile  The ExileManager instance.
+     * @return void
      */
     public function __construct(private readonly ExileManager $exile) {}
 

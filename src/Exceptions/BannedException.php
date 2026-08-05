@@ -8,15 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use RuntimeException;
 
-/**
- * Exception thrown when a user is banned.
- */
 final class BannedException extends RuntimeException
 {
     /**
      * Create a new BannedException instance.
      *
      * @param  Ban  $ban  The ban instance associated with the exception.
+     * @return void
      */
     public function __construct(public readonly Ban $ban)
     {

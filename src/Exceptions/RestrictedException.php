@@ -8,15 +8,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use RuntimeException;
 
-/**
- * Exception thrown when a user is restricted from performing an action.
- */
 final class RestrictedException extends RuntimeException
 {
     /**
      * Create a new RestrictedException instance.
      *
      * @param  Restriction  $restriction  The restriction instance associated with the exception.
+     * @return void
      */
     public function __construct(public readonly Restriction $restriction)
     {
