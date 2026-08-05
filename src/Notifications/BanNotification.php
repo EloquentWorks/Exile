@@ -9,9 +9,6 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use InvalidArgumentException;
 
-/**
- * Base class for ban-related notifications.
- */
 abstract class BanNotification extends Notification implements ShouldQueue
 {
     use Queueable;
@@ -20,10 +17,12 @@ abstract class BanNotification extends Notification implements ShouldQueue
      * Create a new notification instance.
      *
      * @param  Ban  $ban  The ban associated with this notification.
+     * @return void
      */
     public function __construct(
         public readonly Ban $ban
     ) {
+        // Set the notification to be sent after the current database transaction is committed.
         $this->afterCommit();
     }
 
@@ -79,20 +78,14 @@ abstract class BanNotification extends Notification implements ShouldQueue
             ?? $this->defaultView();
 
         // Validate that the subject and view are non-empty strings, throwing an exception if they are not.
-        if (
-            ! is_string($subject)
-            || $subject === ''
-        ) {
+        if (! is_string($subject) || $subject === '') {
             throw new InvalidArgumentException(
                 'The configured Exile notification subject must be a non-empty string.'
             );
         }
 
         // Validate that the view is a non-empty string, throwing an exception if it is not.
-        if (
-            ! is_string($view)
-            || $view === ''
-        ) {
+        if (! is_string($view) || $view === '') {
             throw new InvalidArgumentException(
                 'The configured Exile notification view must be a non-empty string.'
             );
@@ -161,10 +154,7 @@ abstract class BanNotification extends Notification implements ShouldQueue
         );
 
         // If a valid timezone is configured, convert the expiration date to that timezone.
-        if (
-            is_string($timezone)
-            && $timezone !== ''
-        ) {
+        if (is_string($timezone) && $timezone !== '') {
             // Convert the expiration date to the configured timezone.
             $expiresAt = $expiresAt->timezone(
                 $timezone

@@ -2,9 +2,6 @@
 
 namespace EloquentWorks\Exile\Notifications;
 
-/**
- * Notification sent when a ban is revoked.
- */
 final class BanRevokedNotification extends BanNotification
 {
     /**
@@ -31,6 +28,7 @@ final class BanRevokedNotification extends BanNotification
      */
     protected function notificationKey(): string
     {
+        // Return the notification key for this notification, which is used to retrieve configuration settings.
         return 'revoked';
     }
 
@@ -41,6 +39,7 @@ final class BanRevokedNotification extends BanNotification
      */
     protected function defaultSubject(): string
     {
+        // Return the default subject for this notification, which is used in email notifications.
         return 'Enforcement revoked';
     }
 
@@ -51,6 +50,7 @@ final class BanRevokedNotification extends BanNotification
      */
     protected function defaultView(): string
     {
+        // Return the default view for this notification, which is used in email notifications.
         return 'exile::mail.ban-revoked';
     }
 }

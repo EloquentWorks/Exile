@@ -5,9 +5,6 @@ namespace EloquentWorks\Exile\Services;
 use EloquentWorks\Exile\Models\ModerationAction;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * Service responsible for logging moderation actions.
- */
 final class AuditLogger
 {
     /**

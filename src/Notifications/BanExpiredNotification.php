@@ -2,9 +2,6 @@
 
 namespace EloquentWorks\Exile\Notifications;
 
-/**
- * Notification sent when a ban expires.
- */
 final class BanExpiredNotification extends BanNotification
 {
     /**
@@ -31,6 +28,7 @@ final class BanExpiredNotification extends BanNotification
      */
     protected function notificationKey(): string
     {
+        // Return the notification key for this notification, which is used to retrieve configuration settings.
         return 'expired';
     }
 
@@ -41,6 +39,7 @@ final class BanExpiredNotification extends BanNotification
      */
     protected function defaultSubject(): string
     {
+        // Return the default subject for the notification email.
         return 'Enforcement expired';
     }
 
@@ -51,6 +50,7 @@ final class BanExpiredNotification extends BanNotification
      */
     protected function defaultView(): string
     {
+        // Return the default view for the notification email.
         return 'exile::mail.ban-expired';
     }
 }

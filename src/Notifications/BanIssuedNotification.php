@@ -2,9 +2,6 @@
 
 namespace EloquentWorks\Exile\Notifications;
 
-/**
- * Notification sent when a ban is issued.
- */
 final class BanIssuedNotification extends BanNotification
 {
     /**
@@ -33,6 +30,7 @@ final class BanIssuedNotification extends BanNotification
      */
     protected function notificationKey(): string
     {
+        // Return the notification key used to retrieve configuration settings for this notification.
         return 'issued';
     }
 
@@ -43,6 +41,7 @@ final class BanIssuedNotification extends BanNotification
      */
     protected function defaultSubject(): string
     {
+        // Return the default subject for this notification, which is used in email notifications.
         return 'Account enforcement notice';
     }
 
@@ -53,6 +52,7 @@ final class BanIssuedNotification extends BanNotification
      */
     protected function defaultView(): string
     {
+        // Return the default view for this notification, which is used to render the email content.
         return 'exile::mail.ban-issued';
     }
 }
