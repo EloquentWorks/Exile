@@ -26,6 +26,7 @@ final class EnsureNotBanned
      * @param  Request  $request  The incoming HTTP request.
      * @param  Closure  $next  The next middleware in the pipeline.
      * @return Response The HTTP response after processing the request.
+     *
      * @throws BannedException If the user is banned.
      */
     public function handle(Request $request, Closure $next): Response

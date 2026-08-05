@@ -28,6 +28,7 @@ final class EnsureActionAllowed
      * @param  Closure  $next  The next middleware or request handler.
      * @param  string  $type  The type of restriction to check against.
      * @return Response The HTTP response after processing the request.
+     *
      * @throws InvalidArgumentException If the provided restriction type is unknown.
      * @throws RestrictedException If the user has an active restriction of the specified type.
      */
