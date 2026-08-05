@@ -16,7 +16,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  */
 class AppliedEscalation extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'escalatable_type',
         'escalatable_id',
@@ -32,6 +36,8 @@ class AppliedEscalation extends Model
      */
     public function getTable(): string
     {
+        // Get the table name for the AppliedEscalation model from the
+        // configuration, defaulting to 'exile_escalations' if not set.
         return (string) config(
             'exile.tables.escalations',
             'exile_escalations'
@@ -45,6 +51,7 @@ class AppliedEscalation extends Model
      */
     public function escalatable(): MorphTo
     {
+        // Define a polymorphic relationship to the parent model that this escalation is applied to.
         return $this->morphTo();
     }
 
@@ -55,6 +62,7 @@ class AppliedEscalation extends Model
      */
     protected function casts(): array
     {
+        // Define the attribute casts for the model's properties, ensuring proper data types.
         return [
             'threshold_points' => 'integer',
             'metadata' => 'array',

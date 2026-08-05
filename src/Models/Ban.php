@@ -46,7 +46,11 @@ use Illuminate\Support\Carbon;
  */
 class Ban extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'type',
         'bannable_type',
@@ -75,7 +79,8 @@ class Ban extends Model
      */
     public function getTable(): string
     {
-        // Return the table name for this model, which is configurable via the 'exile.tables.bans' configuration option, defaulting to 'exile_bans'.
+        // Return the table name for this model, which is configurable via
+        // the 'exile.tables.bans' configuration option, defaulting to 'exile_bans'.
         return (string) config('exile.tables.bans', 'exile_bans');
     }
 
@@ -208,7 +213,8 @@ class Ban extends Model
      */
     public function isActive(): bool
     {
-        // Determine if the ban is currently active by checking if it has not been revoked and either has no expiration date or the expiration date is in the future.
+        // Determine if the ban is currently active by checking if it has not been
+        // revoked and either has no expiration date or the expiration date is in the future.
         return $this->revoked_at === null
             && ($this->expires_at === null || $this->expires_at->isFuture());
     }
@@ -253,6 +259,8 @@ class Ban extends Model
      */
     protected function casts(): array
     {
+        // Get the casts for the model's attributes, specifying how
+        // each attribute should be cast when accessed or set.
         return [
             'type' => BanType::class,
             'ip_address' => 'encrypted',

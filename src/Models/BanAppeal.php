@@ -22,7 +22,11 @@ use Illuminate\Support\Carbon;
  */
 class BanAppeal extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'ban_id',
         'appellant_type',
@@ -120,6 +124,7 @@ class BanAppeal extends Model
      */
     protected function casts(): array
     {
+        // Return an array of attribute casts for the model's attributes.
         return [
             'status' => AppealStatus::class,
             'reviewed_at' => 'datetime',

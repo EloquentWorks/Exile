@@ -18,7 +18,11 @@ use Illuminate\Support\Carbon;
  */
 class DeviceFingerprint extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'fingerprintable_type',
         'fingerprintable_id',
@@ -44,7 +48,7 @@ class DeviceFingerprint extends Model
     /**
      * Get the parent fingerprintable model (user, account, etc.).
      *
-     * @return MorphTo<Model, $this>
+     * @return MorphTo<Model, $this> Returns the polymorphic relationship to the fingerprintable model.
      */
     public function fingerprintable(): MorphTo
     {
@@ -59,6 +63,8 @@ class DeviceFingerprint extends Model
      */
     protected function casts(): array
     {
+        // Return the attribute casts for the model, specifying that 'metadata' is an
+        // array and 'first_seen_at' and 'last_seen_at' are datetime fields.
         return [
             'metadata' => 'array',
             'first_seen_at' => 'datetime',

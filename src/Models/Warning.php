@@ -20,7 +20,11 @@ use Illuminate\Support\Carbon;
  */
 class Warning extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'warnable_type',
         'warnable_id',
@@ -41,7 +45,8 @@ class Warning extends Model
      */
     public function getTable(): string
     {
-        // Return the table name for this model, using the configuration value 'exile.tables.warnings' if it exists, or defaulting to 'exile_warnings' if not.
+        // Return the table name for this model, using the configuration value 'exile.tables.warnings'
+        // if it exists, or defaulting to 'exile_warnings' if not.
         return (string) config('exile.tables.warnings', 'exile_warnings');
     }
 
@@ -52,7 +57,8 @@ class Warning extends Model
      */
     public function warnable(): MorphTo
     {
-        // Return a polymorphic relationship to the model that this warning is associated with, using the 'warnable_type' and 'warnable_id' columns to determine the related model.
+        // Return a polymorphic relationship to the model that this warning is associated
+        // with, using the 'warnable_type' and 'warnable_id' columns to determine the related model.
         return $this->morphTo();
     }
 
@@ -63,7 +69,8 @@ class Warning extends Model
      */
     public function issuedBy(): MorphTo
     {
-        // Return a polymorphic relationship to the model that issued this warning, using the 'issued_by_type' and 'issued_by_id' columns to determine the related model.
+        // Return a polymorphic relationship to the model that issued this warning, using the
+        // 'issued_by_type' and 'issued_by_id' columns to determine the related model.
         return $this->morphTo(__FUNCTION__, 'issued_by_type', 'issued_by_id');
     }
 

@@ -57,7 +57,11 @@ class ModerationAction extends Model
         return $this->morphTo();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Get the casts for the model's attributes.
+     *
+     * @return array<string, string> An array of attribute casts.
+     */
     protected function casts(): array
     {
         // Return the casts for the model attributes.

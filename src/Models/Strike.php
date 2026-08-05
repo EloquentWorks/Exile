@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
- * Represents a strike issued to a user or entity, which may have points, a category, a reason, and optional metadata.
- *
  * @property int $id
  * @property string $strikeable_type
  * @property int|string $strikeable_id
@@ -26,7 +24,11 @@ use Illuminate\Support\Carbon;
  */
 class Strike extends Model
 {
-    /** @var list<string> */
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'strikeable_type',
         'strikeable_id',
@@ -49,6 +51,8 @@ class Strike extends Model
      */
     public function getTable(): string
     {
+        // Get the table name for the model from the configuration,
+        // defaulting to 'exile_strikes' if not set.
         return (string) config('exile.tables.strikes', 'exile_strikes');
     }
 
@@ -59,6 +63,7 @@ class Strike extends Model
      */
     public function strikeable(): MorphTo
     {
+        // Return a polymorphic relationship to the model that this strike is associated with.
         return $this->morphTo();
     }
 
@@ -80,6 +85,7 @@ class Strike extends Model
      */
     public function revokedBy(): MorphTo
     {
+        // Return a polymorphic relationship to the model that revoked this strike.
         return $this->morphTo(__FUNCTION__, 'revoked_by_type', 'revoked_by_id');
     }
 
@@ -96,6 +102,7 @@ class Strike extends Model
         /** @var MorphMany<Evidence, $this> $relation */
         $relation = $this->morphMany($model, 'evidenceable');
 
+        // Return a polymorphic relationship to the evidence associated with this strike.
         return $relation;
     }
 
@@ -107,6 +114,7 @@ class Strike extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
+        // Scope a query to only include active strikes (not revoked and not expired).
         return $query
             ->whereNull('revoked_at')
             ->where(function (Builder $query): void {
@@ -121,6 +129,7 @@ class Strike extends Model
      */
     public function isActive(): bool
     {
+        // Determine if the strike is currently active (not revoked and not expired).
         return $this->revoked_at === null && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
@@ -131,6 +140,8 @@ class Strike extends Model
      */
     protected function casts(): array
     {
+        // Get the casts for the model's attributes, defining
+        // how they should be converted when accessed or set.
         return [
             'points' => 'integer',
             'metadata' => 'array',

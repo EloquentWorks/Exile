@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * Represents an evidence file associated with a moderation action (e.g., Ban, Restriction, Strike, Warning).
- *
  * @property int $id
  * @property string $disk
  * @property string $path
@@ -48,6 +46,7 @@ class Evidence extends Model
      */
     public function getTable(): string
     {
+        // Get the table name for the Evidence model from the configuration, defaulting to 'exile_evidence' if not set.
         return (string) config('exile.tables.evidence', 'exile_evidence');
     }
 
@@ -58,6 +57,8 @@ class Evidence extends Model
      */
     public function evidenceable(): MorphTo
     {
+        // Get the polymorphic relationship to the parent model that this
+        // evidence belongs to (e.g., Ban, Restriction, Strike, Warning).
         return $this->morphTo();
     }
 
@@ -68,6 +69,7 @@ class Evidence extends Model
      */
     public function uploadedBy(): MorphTo
     {
+        // Get the polymorphic relationship to the entity that uploaded the evidence.
         return $this->morphTo(__FUNCTION__, 'uploaded_by_type', 'uploaded_by_id');
     }
 
@@ -116,12 +118,19 @@ class Evidence extends Model
      */
     public function url(): string
     {
+        // Get the URL for the evidence file using the configured disk and path.
         return Storage::disk($this->disk)->url($this->path);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Get the casts for the model's attributes.
+     *
+     * @return array<string, string> An array of attribute casts.
+     */
     protected function casts(): array
     {
+        // Define the attribute casting for the model, specifying that 'size_bytes' should
+        // be cast to an integer and 'metadata' should be cast to an array.
         return [
             'size_bytes' => 'integer',
             'metadata' => 'array',
