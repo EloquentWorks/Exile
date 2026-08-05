@@ -2,18 +2,17 @@
 
 [![Tests](https://github.com/EloquentWorks/Exile/actions/workflows/tests.yml/badge.svg)](https://github.com/EloquentWorks/Exile/actions/workflows/tests.yml)
 [![Latest Release](https://img.shields.io/github/v/release/EloquentWorks/Exile)](https://github.com/EloquentWorks/Exile/releases)
-[![License](https://img.shields.io/github/license/EloquentWorks/Exile)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A comprehensive moderation-enforcement package for Laravel.
+Comprehensive moderation-enforcement tools for Laravel applications.
 
-Laravel Exile provides account, IP, CIDR network, and device bans; temporary and permanent restrictions; warnings and strike escalation; appeals; evidence management; audit history; middleware; queued notifications; customizable mail templates; and scheduled maintenance.
+Laravel Exile supports account, IP, CIDR network, and device bans; temporary and permanent enforcement; warnings and strike escalation; login, posting, read-only, and shadow restrictions; appeals, evidence, moderator tracking, audit history, events, notifications, middleware, and scheduled maintenance.
 
 ```php
 $user->ban(
     reason: 'Repeated harassment',
     expiresAt: now()->addDays(7),
     moderator: $moderator,
-    category: 'harassment',
 );
 
 $user->strike(
@@ -27,43 +26,28 @@ $user->restrict(
 );
 ```
 
-## ✨ Highlights
+## 📋 Supported Versions
 
-- Account, exact-IP, CIDR network, device, and combined bans
-- Configurable `any` or strict `all` matching for combined bans
-- Temporary and permanent enforcement
-- Transactional enforcement writes and after-commit side effects
-- Login, posting, read-only, and shadow restrictions
-- Warnings, strike points, and concurrency-safe escalation
-- Appeals with approval, denial, withdrawal, and automatic revocation
-- Evidence uploads with SHA-256 integrity checksums
-- Moderator attribution, internal notes, metadata, and audit history
-- Queued ban notifications with replaceable classes
-- Publishable Markdown mail templates
-- Middleware, expiration processing, and retention pruning
-- Configurable models, table names, categories, and aliases
+| Package version | PHP | Laravel / Illuminate |
+|---|---:|---:|
+| Current | `^8.2` | `^12.0 \|\| ^13.0` |
 
-## 📋 Requirements
+> Composer automatically resolves compatible Laravel and Illuminate versions for the consuming application.
 
-| Laravel | PHP | Orchestra Testbench |
-| --- | --- | --- |
-| 12.x | 8.2+ | 10.x |
-| 13.x | 8.3+ | 11.x |
-
-## 📦 Installation
+## 🚀 Installation
 
 ```bash
 composer require eloquent-works/exile
 php artisan exile:install --migrate
 ```
 
-Publish the customizable notification templates as part of installation:
+Publish the customizable notification templates during installation:
 
 ```bash
 php artisan exile:install --migrate --views
 ```
 
-Add `Bannable` to the account model:
+Add the `Bannable` trait to the account model:
 
 ```php
 <?php
@@ -86,6 +70,22 @@ EXILE_HASH_KEY=base64:replace-with-a-dedicated-random-key
 ```
 
 Do not rotate this key casually. Existing IP and device hashes will no longer match after rotation.
+
+## ✨ Features
+
+- Account, exact-IP, CIDR network, device, and combined bans
+- Configurable `any` or strict `all` matching for combined bans
+- Temporary and permanent enforcement
+- Transactional enforcement writes and after-commit side effects
+- Login, posting, read-only, and shadow restrictions
+- Warnings, strike points, and automatic escalation
+- Appeals with approval, denial, withdrawal, and automatic revocation
+- Evidence uploads with SHA-256 integrity checksums
+- Moderator attribution, internal notes, metadata, and audit history
+- Queued ban notifications with replaceable notification classes
+- Publishable Markdown mail templates
+- Middleware, expiration processing, and retention pruning
+- Configurable models, table names, categories, and aliases
 
 ## 🛡️ Protect Routes
 
@@ -117,7 +117,7 @@ $shadowed = (bool) request()
     ->get('exile.shadowed', false);
 ```
 
-## 🚫 Account Bans
+## 👤 Account Bans
 
 ```php
 $ban = $user->ban(
@@ -165,38 +165,13 @@ Register a device observation without storing the raw token:
 
 ```php
 $user->registerDeviceFingerprint(
-    fingerprint: $request->header(
-        'X-Device-Fingerprint'
-    ),
+    fingerprint: $request->header('X-Device-Fingerprint'),
     ipAddress: $request->ip(),
     label: 'Chrome on Windows',
 );
 ```
 
-## 🔗 Combined-Ban Matching
-
-Exile supports two matching modes:
-
-```php
-'security' => [
-    'combined_ban_match' => 'any',
-],
-```
-
-- `any` preserves the original behavior. A combined ban matches when any stored identifier matches.
-- `all` requires every identifier belonging to the combined ban type to match.
-
-Strict matching example:
-
-```php
-'security' => [
-    'combined_ban_match' => 'all',
-],
-```
-
-With `all`, an `AccountAndIp` ban requires both the correct account and the correct IP address.
-
-## ⚠️ Warnings, Strikes, and Escalation
+## ⚠️ Warnings and Strikes
 
 ```php
 use EloquentWorks\Exile\Enums\WarningSeverity;
@@ -215,9 +190,9 @@ $user->strike(
 $user->activeStrikePoints();
 ```
 
-Escalation runs inside a transaction, locks the affected account row, and reserves each account/threshold combination in `exile_escalations`. This prevents the same threshold from being applied twice by concurrent requests.
+Escalation thresholds are configured in `config/exile.php`.
 
-## 🔒 Restrictions
+## 🚧 Restrictions
 
 ```php
 use EloquentWorks\Exile\Enums\RestrictionType;
@@ -228,135 +203,117 @@ $user->restrict(
     expiresAt: now()->addDay(),
 );
 
-$user->isRestricted(
-    RestrictionType::Posting
-);
+$user->restrict(RestrictionType::ReadOnly);
+$user->restrict(RestrictionType::Login);
+$user->restrict(RestrictionType::Shadow);
 
+$user->isRestricted(RestrictionType::Posting);
 $user->isShadowBanned();
 ```
 
-## 📨 Appeals
+## ⚖️ Appeals
 
 ```php
 use EloquentWorks\Exile\Enums\AppealStatus;
 use EloquentWorks\Exile\Facades\Exile;
 
 $appeal = Exile::submitAppeal(
-    ban: $ban,
-    appellant: $user,
-    message: 'I believe this was issued in error.',
+    $ban,
+    $user,
+    'I believe this enforcement was issued in error.',
 );
 
 Exile::resolveAppeal(
-    appeal: $appeal,
-    status: AppealStatus::Approved,
-    reviewer: $moderator,
-    response: 'The appeal was approved.',
+    $appeal,
+    AppealStatus::Approved,
+    $reviewer,
+    'Appeal accepted.',
 );
 ```
 
 Approving an appeal revokes the related ban.
 
-## 🔐 Evidence Integrity
+## 📎 Evidence
+
+Attach an existing stored file:
+
+```php
+$evidence = Exile::attachEvidence(
+    subject: $ban,
+    disk: 'private',
+    path: 'moderation/case-1042/report.pdf',
+    originalName: 'report.pdf',
+    uploadedBy: $moderator,
+);
+```
+
+Or store an uploaded file through Exile:
 
 ```php
 $evidence = Exile::storeEvidence(
-    subject: $ban,
-    file: $request->file('evidence'),
-    uploadedBy: $moderator,
+    $ban,
+    $request->file('evidence'),
+    $moderator,
 );
-
-$evidence->checksum_sha256;
-
-$evidence->hasValidChecksum();
 ```
 
-Newly uploaded evidence receives a SHA-256 checksum. `hasValidChecksum()` recalculates the file hash and securely compares it with the saved value.
+## ♻️ Revocation
 
-## ✉️ Notifications and Mail Templates
+```php
+Exile::revokeBan($ban, $moderator);
+Exile::revokeRestriction($restriction, $moderator);
+Exile::revokeStrike($strike, $moderator);
+```
 
-Notifications are disabled by default:
+Records remain available as moderation history until explicitly pruned.
+
+## ⏱️ Commands
+
+```bash
+php artisan exile:expire
+php artisan exile:prune
+```
+
+Pruning is disabled by default. Enable it in configuration or explicitly force a retention period:
+
+```bash
+php artisan exile:prune --force --days=365
+```
+
+## 🔔 Notifications
+
+Notifications are disabled by default. Enable them in `config/exile.php`:
 
 ```php
 'notifications' => [
     'enabled' => true,
     'channels' => ['mail'],
-    'issued' => true,
-    'revoked' => true,
-    'expired' => true,
-    'fail_silently' => true,
 ],
 ```
 
-The bundled ban notifications are queued and configured to run after database commits. Run a queue worker when notifications are enabled:
+The affected model must support Laravel notifications. Database notifications also require Laravel's notifications table.
 
-```bash
-php artisan queue:work
-```
+## 📣 Events
 
-Publish the Markdown templates:
-
-```bash
-php artisan vendor:publish --tag=exile-views
-```
-
-Customize them at:
-
-```text
-resources/views/vendor/exile/mail/ban-issued.blade.php
-resources/views/vendor/exile/mail/ban-revoked.blade.php
-resources/views/vendor/exile/mail/ban-expired.blade.php
-```
-
-Notification classes, subjects, views, headings, content, action buttons, date formatting, and channels are configurable.
-
-## 🧰 Commands
-
-```bash
-php artisan exile:install
-php artisan exile:expire
-php artisan exile:prune
-```
-
-Examples:
-
-```bash
-php artisan exile:install --migrate --views
-
-php artisan exile:expire --chunk=1000
-
-php artisan exile:prune --force --days=365
-```
-
-Pruning is disabled by default.
-
-## 📚 Documentation
-
-- [Documentation index](docs/README.md)
-- [Installation](docs/installation.md)
-- [Configuration](docs/configuration.md)
-- [Architecture](docs/architecture.md)
-- [Bans](docs/bans.md)
-- [IP, network, and device enforcement](docs/identifiers.md)
-- [Restrictions](docs/restrictions.md)
-- [Warnings, strikes, and escalation](docs/warnings-and-strikes.md)
-- [Appeals](docs/appeals.md)
-- [Evidence](docs/evidence.md)
-- [Middleware](docs/middleware.md)
-- [Events, notifications, and audit history](docs/events-notifications-and-audit.md)
-- [Commands and scheduling](docs/commands-and-scheduling.md)
-- [Customization](docs/customization.md)
-- [Security](docs/security.md)
-- [Testing](docs/testing.md)
+- `BanIssued`
+- `BanRevoked`
+- `BanExpired`
+- `RestrictionIssued`
+- `RestrictionRevoked`
+- `StrikeIssued`
+- `WarningIssued`
+- `AppealSubmitted`
+- `AppealResolved`
 
 ## ✅ Quality Checks
 
+Run the complete quality pipeline:
+
 ```bash
-composer validate --strict
 composer quality
 ```
 
-Or run the tools separately:
+Or run each check separately:
 
 ```bash
 composer format
@@ -364,15 +321,54 @@ composer analyse
 composer test
 ```
 
+Validate Composer metadata before publishing:
+
+```bash
+composer validate --strict
+```
+
+`composer analyse` must complete with zero PHPStan errors. Do not disable valid findings globally merely to make the command pass. Prefer correcting native types, generic PHPDoc annotations, impossible comparisons, redundant `instanceof` conditions, and iterable value types.
+
+See [Testing and Quality](docs/testing.md) and [PHPStan Remediation](docs/phpstan-remediation.md).
+
+## 📚 Documentation
+
+Full documentation is available in the [`docs`](docs) directory:
+
+- [Documentation index](docs/README.md)
+- [Installation](docs/installation.md)
+- [Configuration](docs/configuration.md)
+- [Architecture](docs/architecture.md)
+- [Bans](docs/bans.md)
+- [IP, Network, and Device Enforcement](docs/identifiers.md)
+- [Restrictions](docs/restrictions.md)
+- [Warnings, Strikes, and Escalation](docs/warnings-and-strikes.md)
+- [Appeals](docs/appeals.md)
+- [Evidence](docs/evidence.md)
+- [Middleware](docs/middleware.md)
+- [Events, Notifications, and Audit History](docs/events-notifications-and-audit.md)
+- [Commands and Scheduling](docs/commands-and-scheduling.md)
+- [Customization](docs/customization.md)
+- [Security](docs/security.md)
+- [Testing and Quality](docs/testing.md)
+- [PHPStan Remediation](docs/phpstan-remediation.md)
+- [Release Checklist](docs/release-checklist.md)
+
 ## 🔐 Security
 
-Keep `EXILE_HASH_KEY` private. Configure Laravel trusted proxies before relying on request IP addresses behind a proxy or load balancer. Store evidence on a private filesystem disk and protect every download with application authorization.
+Keep `EXILE_HASH_KEY` private. Exile uses keyed HMAC hashes for IP and device matching. Human-readable IP addresses and CIDR ranges are encrypted at rest using Laravel's encryption system.
 
-Security vulnerabilities should be reported privately according to [SECURITY.md](SECURITY.md).
+Do not use device fingerprints as a sole identity signal. Treat them as one moderation indicator alongside account history, IP context, and human review.
+
+Security vulnerabilities should be reported privately according to [SECURITY.md](SECURITY.md), not through a public issue.
 
 ## 🤝 Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## 🙏 Credits
+
+Built by Eloquent Works.
 
 ## 📄 License
 

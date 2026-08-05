@@ -195,8 +195,6 @@ Because stable versions may already be installed in user applications:
 - Provide a complete `down()` method
 - Use configurable package table names
 - Test migration and rollback behavior
-- Document upgrade steps in `UPGRADING.md`
-- Mention schema changes in `CHANGELOG.md`
 
 Consider SQLite, MySQL, and PostgreSQL differences.
 
@@ -259,8 +257,6 @@ Before opening a pull request, confirm:
 - [ ] New behavior has tests
 - [ ] Documentation is updated
 - [ ] Database changes use new migrations
-- [ ] `CHANGELOG.md` is updated when appropriate
-- [ ] `UPGRADING.md` is updated when user action is required
 - [ ] No secrets, debug files, or generated artifacts are committed
 
 In the pull request description, explain:
