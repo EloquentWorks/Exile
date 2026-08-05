@@ -12,9 +12,6 @@ use EloquentWorks\Exile\Models\Warning;
 use EloquentWorks\Exile\Services\ExileManager;
 use Illuminate\Console\Command;
 
-/**
- * Command to prune old Exile moderation records and their evidence.
- */
 final class PruneExileCommand extends Command
 {
     /**
@@ -31,19 +28,35 @@ final class PruneExileCommand extends Command
      */
     protected $description = 'Prune old Exile moderation records and their evidence.';
 
-    public function __construct(private readonly ExileManager $exile)
-    {
+    /**
+     * Create a new command instance.
+     *
+     * @param  ExileManager  $exile  The ExileManager service for handling moderation records.
+     * @return void
+     */
+    public function __construct(
+        private readonly ExileManager $exile
+    ) {
+        // Call the parent constructor to ensure proper initialization
         parent::__construct();
     }
 
+    /**
+     * Execute the console command.
+     *
+     * @return int The exit status code of the command.
+     */
     public function handle(): int
     {
+        // Check if pruning is enabled in the configuration or if the --force option is provided
         if (! config('exile.retention.prune_enabled', false) && ! (bool) $this->option('force')) {
             $this->components->warn('Pruning is disabled. Use --force or enable exile.retention.prune_enabled.');
 
+            // Exit the command with a success status code since pruning is not performed
             return self::SUCCESS;
         }
 
+        // Determine the number of days to retain records, defaulting to the configuration value or 365 days
         $days = max(1, (int) ($this->option('days') ?: config('exile.retention.days', 365)));
         $cutoff = now()->subDays($days);
         $count = 0;
@@ -56,6 +69,7 @@ final class PruneExileCommand extends Command
                 $query->whereNotNull('revoked_at')
                     ->orWhere(fn ($query) => $query->whereNotNull('expires_at')->where('expires_at', '<=', now()));
             })
+            // Process records in chunks to avoid memory issues
             ->chunkById(200, function ($records) use (&$count): void {
                 foreach ($records as $ban) {
                     foreach ($ban->evidence as $evidence) {
@@ -104,8 +118,10 @@ final class PruneExileCommand extends Command
         $actionModel = config('exile.models.action', ModerationAction::class);
         $count += $actionModel::query()->where('created_at', '<', $cutoff)->delete();
 
+        // Display an informational message indicating the number of old Exile records that were pruned
         $this->components->info("Pruned {$count} old Exile records.");
 
+        // Exit the command with a success status code
         return self::SUCCESS;
     }
 }

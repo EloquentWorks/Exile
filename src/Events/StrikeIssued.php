@@ -4,10 +4,13 @@ namespace EloquentWorks\Exile\Events;
 
 use EloquentWorks\Exile\Models\Strike;
 
-/**
- * Event triggered when a strike is issued.
- */
 final class StrikeIssued
 {
+    /**
+     * Create a new event instance.
+     *
+     * @param  Strike  $strike  The issued strike.
+     * @return void
+     */
     public function __construct(public readonly Strike $strike) {}
 }

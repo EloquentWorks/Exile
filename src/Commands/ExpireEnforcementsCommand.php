@@ -8,9 +8,6 @@ use EloquentWorks\Exile\Services\AuditLogger;
 use EloquentWorks\Exile\Services\ExileManager;
 use Illuminate\Console\Command;
 
-/**
- * Command to process newly expired bans and restrictions.
- */
 final class ExpireEnforcementsCommand extends Command
 {
     /**
@@ -32,6 +29,7 @@ final class ExpireEnforcementsCommand extends Command
      *
      * @param  ExileManager  $exile  The ExileManager service for handling bans and restrictions.
      * @param  AuditLogger  $audit  The AuditLogger service for logging events.
+     * @return void
      */
     public function __construct(
         private readonly ExileManager $exile,

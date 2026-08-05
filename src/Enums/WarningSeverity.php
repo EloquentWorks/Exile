@@ -2,9 +2,6 @@
 
 namespace EloquentWorks\Exile\Enums;
 
-/**
- * Enum representing the severity of a warning.
- */
 enum WarningSeverity: string
 {
     case Info = 'info';

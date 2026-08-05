@@ -2,9 +2,6 @@
 
 namespace EloquentWorks\Exile\Enums;
 
-/**
- * Enum representing the type of a ban.
- */
 enum BanType: string
 {
     case Account = 'account';

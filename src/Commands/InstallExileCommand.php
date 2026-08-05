@@ -4,9 +4,6 @@ namespace EloquentWorks\Exile\Commands;
 
 use Illuminate\Console\Command;
 
-/**
- * Command to install Laravel Exile by publishing configuration, migrations, and optional views.
- */
 final class InstallExileCommand extends Command
 {
     /**
