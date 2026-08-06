@@ -11,6 +11,7 @@ class InstallCommandTest extends TestCase
     #[Test]
     public function the_install_command_completes_successfully(): void
     {
+        // Run the install command and assert that it completes successfully.
         $this->artisan('exile:install', [
             '--force' => true,
         ])
@@ -26,41 +27,20 @@ class InstallCommandTest extends TestCase
     #[Test]
     public function the_install_command_can_run_migrations(): void
     {
+        // Run the install command with the --migrate option and assert that it completes successfully.
         $this->artisan('exile:install', [
             '--force' => true,
             '--migrate' => true,
         ])->assertSuccessful();
 
-        self::assertTrue(
-            Schema::hasTable('exile_bans')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_restrictions')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_strikes')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_warnings')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_appeals')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_evidence')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_device_fingerprints')
-        );
-
-        self::assertTrue(
-            Schema::hasTable('exile_actions')
-        );
+        // Assert that the expected tables exist in the database after running the migrations.
+        self::assertTrue(Schema::hasTable('exile_bans'));
+        self::assertTrue(Schema::hasTable('exile_restrictions'));
+        self::assertTrue(Schema::hasTable('exile_strikes'));
+        self::assertTrue(Schema::hasTable('exile_warnings'));
+        self::assertTrue(Schema::hasTable('exile_appeals'));
+        self::assertTrue(Schema::hasTable('exile_evidence'));
+        self::assertTrue(Schema::hasTable('exile_device_fingerprints'));
+        self::assertTrue(Schema::hasTable('exile_actions'));
     }
 }

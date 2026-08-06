@@ -14,9 +14,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
-/**
- * Service provider for the Exile package.
- */
 final class ExileServiceProvider extends ServiceProvider
 {
     /**

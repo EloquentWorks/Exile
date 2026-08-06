@@ -4,9 +4,6 @@ namespace EloquentWorks\Exile\Support;
 
 use InvalidArgumentException;
 
-/**
- * Class responsible for hashing identifiers such as IP addresses and device fingerprints.
- */
 final class IdentifierHasher
 {
     /**
