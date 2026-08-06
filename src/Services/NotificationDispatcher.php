@@ -12,13 +12,6 @@ use Illuminate\Support\Facades\Notification as NotificationFacade;
 use LogicException;
 use Throwable;
 
-/**
- * Class NotificationDispatcher
- *
- * This class is responsible for dispatching notifications related to bans.
- * It checks the configuration settings to determine whether to send notifications
- * for issued, revoked, or expired bans and sends them to the appropriate recipients.
- */
 final class NotificationDispatcher
 {
     /**
@@ -29,13 +22,7 @@ final class NotificationDispatcher
     public function banIssued(Ban $ban): void
     {
         // Check if notifications for issued bans are enabled in the configuration.
-        if (
-            // If notifications for issued bans are enabled, proceed to send the notification.
-            config(
-                'exile.notifications.issued',
-                true
-            )
-        ) {
+        if (config('exile.notifications.issued', true)) {
             // Send the notification to the configured recipient using the sendConfigured method.
             $this->sendConfigured(
                 recipient: $ban->bannable,
@@ -54,13 +41,7 @@ final class NotificationDispatcher
     public function banRevoked(Ban $ban): void
     {
         // Check if notifications for revoked bans are enabled in the configuration.
-        if (
-            // If notifications for revoked bans are enabled, proceed to send the notification.
-            config(
-                'exile.notifications.revoked',
-                true
-            )
-        ) {
+        if (config('exile.notifications.revoked', true)) {
             // Send the notification to the configured recipient using the sendConfigured method.
             $this->sendConfigured(
                 recipient: $ban->bannable,
@@ -79,13 +60,7 @@ final class NotificationDispatcher
     public function banExpired(Ban $ban): void
     {
         // Check if notifications for expired bans are enabled in the configuration.
-        if (
-            // If notifications for expired bans are enabled, proceed to send the notification.
-            config(
-                'exile.notifications.expired',
-                true
-            )
-        ) {
+        if (config('exile.notifications.expired', true)) {
             // Send the notification to the configured recipient using the sendConfigured method.
             $this->sendConfigured(
                 recipient: $ban->bannable,
@@ -111,13 +86,7 @@ final class NotificationDispatcher
         Ban $ban,
     ): void {
         // Check if notifications are enabled in the configuration and if the recipient is not null.
-        if (
-            ! config(
-                'exile.notifications.enabled',
-                false
-            )
-            || $recipient === null
-        ) {
+        if (! config('exile.notifications.enabled', false) || $recipient === null) {
             return;
         }
 
@@ -150,12 +119,7 @@ final class NotificationDispatcher
             );
         } catch (Throwable $exception) {
             // If an exception occurs and fail_silently is false, rethrow the exception.
-            if (
-                ! config(
-                    'exile.notifications.fail_silently',
-                    true
-                )
-            ) {
+            if (! config('exile.notifications.fail_silently', true)) {
                 throw $exception;
             }
 

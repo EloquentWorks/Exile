@@ -5,17 +5,13 @@ namespace EloquentWorks\Exile\Services;
 use EloquentWorks\Exile\Support\IdentifierHasher;
 use InvalidArgumentException;
 
-/**
- * Class IpMatcher
- *
- * This class provides functionality to check if an IP address is contained within a given CIDR range.
- */
 final class IpMatcher
 {
     /**
      * Constructor for the IpMatcher class.
      *
      * @param  IdentifierHasher  $hasher  An instance of IdentifierHasher for IP normalization.
+     * @return void
      */
     public function __construct(private readonly IdentifierHasher $hasher) {}
 

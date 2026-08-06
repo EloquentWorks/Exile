@@ -25,11 +25,6 @@ use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use LogicException;
 
-/**
- * The ExileManager class provides methods for managing bans, restrictions, strikes, and warnings within the Exile system.
- *
- * This class serves as a central point for issuing and resolving enforcement actions, as well as checking the status of accounts.
- */
 final class ExileManager
 {
     /**
@@ -40,7 +35,9 @@ final class ExileManager
      * @param  IdentifierHasher  $hasher  The service responsible for hashing identifiers such as IP addresses and device fingerprints.
      * @param  IpMatcher  $ipMatcher  The service responsible for matching IP addresses against CIDR ranges.
      * @param  AuditLogger  $audit  The service responsible for logging audit events related to enforcement actions.
-     * @param  NotificationDispatcher  $notifications  The service responsible for dispatching notifications related to enforcement actions.
+     * @param  NotificationDispatcher  $notifications  The service responsible for dispatching notifications related to
+     *                                                 enforcement actions.
+     * @return void
      */
     public function __construct(
         private readonly EnforcementWriter $writer,
@@ -52,7 +49,8 @@ final class ExileManager
     ) {}
 
     /**
-     * Issue a ban for a specific account with the specified reason, expiration date, moderator, category, internal notes, and metadata.
+     * Issue a ban for a specific account with the specified reason, expiration date,
+     * moderator, category, internal notes, and metadata.
      *
      * @param  Model  $account  The account to be banned.
      * @param  string|null  $reason  The reason for the ban (optional).
@@ -72,6 +70,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a ban for the specified account with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Account,
             account: $account,
@@ -85,7 +85,8 @@ final class ExileManager
     }
 
     /**
-     * Issue a ban for a specific IP address with the specified reason, expiration date, moderator, category, internal notes, and metadata.
+     * Issue a ban for a specific IP address with the specified reason, expiration date,
+     * moderator, category, internal notes, and metadata.
      *
      * @param  string  $ipAddress  The IP address to be banned.
      * @param  string|null  $reason  The reason for the ban (optional).
@@ -105,6 +106,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a ban for the specified IP address with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Ip,
             ipAddress: $ipAddress,
@@ -140,6 +143,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a ban for both the specified account and IP address with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::AccountAndIp,
             account: $account,
@@ -174,6 +179,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a ban for the specified network CIDR with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Network,
             cidr: $cidr,
@@ -207,6 +214,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a ban for the specified device fingerprint with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::Device,
             deviceFingerprint: $deviceFingerprint,
@@ -244,6 +253,8 @@ final class ExileManager
         ?string $internalNotes = null,
         array $metadata = [],
     ): Ban {
+        // Use the EnforcementWriter service to issue a combined ban for the specified account, IP address, and device fingerprint with
+        // the provided reason, expiration date, moderator, category, internal notes, and metadata.
         return $this->writer->issueBan(
             type: BanType::AccountDeviceAndIp,
             account: $account,
@@ -292,9 +303,8 @@ final class ExileManager
     /**
      * Resolve a ban when combined bans match any stored identifier.
      *
-     * This preserves Exile's original behavior.
-     *
-     * @param  EnforcementContext  $context  The context containing the account, IP address, and device fingerprint to check against active bans.
+     * @param  EnforcementContext  $context  The context containing the account, IP address, and
+     *                                       device fingerprint to check against active bans.
      * @return Ban|null Returns the active Ban instance if a match is found, or null if no active ban matches the provided context.
      */
     private function resolveActiveBanUsingAnyMatch(
@@ -399,8 +409,6 @@ final class ExileManager
 
     /**
      * Resolve a ban when combined bans require all stored identifiers to match.
-     *
-     * This is a more strict approach to combined bans.
      *
      * @param  EnforcementContext  $context  The context containing the account, IP address, and device fingerprint to check against active bans.
      * @return Ban|null Returns the active Ban instance if a match is found, or null if no active ban matches the provided context.
@@ -583,6 +591,7 @@ final class ExileManager
      * Resolve an active CIDR network ban for an IP address.
      *
      * @param  class-string<Ban>  $modelClass
+     * @return Ban|null Returns the active Ban instance if a matching network ban is found, or null if no match exists.
      */
     private function resolveNetworkBan(
         string $modelClass,
@@ -723,6 +732,8 @@ final class ExileManager
         ?Model $moderator = null,
         array $metadata = [],
     ): Strike {
+        // Use the EnforcementWriter service to issue a strike for the specified account
+        // with the provided reason, points, category, expiration date, moderator, and metadata.
         $strike = $this->writer->issueStrike(
             account: $account,
             reason: $reason,
@@ -853,6 +864,7 @@ final class ExileManager
      */
     public function submitAppeal(Ban $ban, Model $appellant, string $message): BanAppeal
     {
+        // Check if ban appeals are enabled in the configuration; if not, throw a LogicException.
         if (! config('exile.appeals.enabled', true)) {
             throw new LogicException('Ban appeals are disabled.');
         }
@@ -957,11 +969,12 @@ final class ExileManager
      */
     public function withdrawAppeal(BanAppeal $appeal, Model $appellant): bool
     {
+        // Ensure that only pending appeals can be withdrawn
         if (! $appeal->isPending()) {
             throw new LogicException('Only pending appeals may be withdrawn.');
         }
 
-        // Ensure that the appellant is the same as the one who submitted the appeal
+        // Withdraw the appeal by updating its status and reviewed timestamp
         $saved = $appeal->forceFill([
             'status' => AppealStatus::Withdrawn,
             'reviewed_at' => now(),
@@ -1052,7 +1065,8 @@ final class ExileManager
             throw new InvalidArgumentException("Evidence files may not exceed {$maxKilobytes} KB.");
         }
 
-        // Retrieve the disk and directory configuration for storing evidence files. Default to 'local' disk and 'exile/evidence' directory if not specified.
+        // Retrieve the disk and directory configuration for storing evidence files. Default to 'local' disk
+        // and 'exile/evidence' directory if not specified.
         $disk = (string) config('exile.evidence.disk', 'local');
         $directory = trim((string) config('exile.evidence.directory', 'exile/evidence'), '/');
         $storedPath = $file->store($directory, $disk);
@@ -1062,7 +1076,8 @@ final class ExileManager
             throw new LogicException('The evidence file could not be stored.');
         }
 
-        // Calculate the SHA-256 checksum of the stored file and attach it as evidence to the subject. If any exception occurs during this process, delete the stored file and rethrow the exception.
+        // Calculate the SHA-256 checksum of the stored file and attach it as evidence to the subject.
+        // If any exception occurs during this process, delete the stored file and rethrow the exception.
         try {
             // Calculate the SHA-256 checksum of the stored file.
             $checksum = $this->checksumStoredFile(
@@ -1070,7 +1085,8 @@ final class ExileManager
                 $storedPath
             );
 
-            // Attach the stored file as evidence to the subject, including relevant metadata such as the original file name, MIME type, size in bytes, and the calculated checksum.
+            // Attach the stored file as evidence to the subject, including relevant metadata
+            // such as the original file name, MIME type, size in bytes, and the calculated checksum.
             return $this->attachEvidence(
                 subject: $subject,
                 disk: $disk,
@@ -1138,6 +1154,7 @@ final class ExileManager
      */
     public function deleteEvidence(Evidence $evidence, bool $deleteFile = true): bool
     {
+        // If the $deleteFile parameter is true, delete the associated file from storage using the specified disk and path.
         if ($deleteFile) {
             Storage::disk($evidence->disk)->delete($evidence->path);
         }
@@ -1158,6 +1175,8 @@ final class ExileManager
      */
     public function revokeBan(Ban $ban, ?Model $moderator = null): bool
     {
+        // Use the EnforcementWriter service to revoke the specified ban,
+        // optionally providing the moderator performing the revocation.
         return $this->writer->revokeBan($ban, $moderator);
     }
 
@@ -1170,6 +1189,8 @@ final class ExileManager
      */
     public function revokeRestriction(Restriction $restriction, ?Model $moderator = null): bool
     {
+        // Use the EnforcementWriter service to revoke the specified restriction,
+        // optionally providing the moderator performing the revocation.
         return $this->writer->revokeRestriction($restriction, $moderator);
     }
 
@@ -1182,6 +1203,8 @@ final class ExileManager
      */
     public function revokeStrike(Strike $strike, ?Model $moderator = null): bool
     {
+        // Use the EnforcementWriter service to revoke the specified strike,
+        // optionally providing the moderator performing the revocation.
         return $this->writer->revokeStrike($strike, $moderator);
     }
 

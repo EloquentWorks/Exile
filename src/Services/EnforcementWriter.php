@@ -21,9 +21,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-/**
- * Service responsible for writing enforcement actions to the database.
- */
 final class EnforcementWriter
 {
     /**
@@ -33,6 +30,7 @@ final class EnforcementWriter
      * @param  IpMatcher  $ipMatcher  The IP matcher for validating and normalizing IP addresses.
      * @param  AuditLogger  $audit  The audit logger for logging enforcement actions.
      * @param  NotificationDispatcher  $notifications  The notification dispatcher for sending notifications.
+     * @return void
      */
     public function __construct(
         private readonly IdentifierHasher $hasher,
@@ -683,10 +681,7 @@ final class EnforcementWriter
         }
 
         // Validate that a CIDR range is provided for network bans
-        if (
-            $type === BanType::Network
-            && $cidr === null
-        ) {
+        if ($type === BanType::Network && $cidr === null) {
             throw new InvalidArgumentException(
                 'A network ban requires a CIDR range.'
             );

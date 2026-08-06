@@ -12,11 +12,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-/**
- * The EscalationEngine class is responsible for evaluating and applying automatic moderation escalations
- * based on the accumulated strike points of an account. It checks configured thresholds and applies
- * bans or restrictions accordingly.
- */
 final class EscalationEngine
 {
     /**
@@ -24,6 +19,7 @@ final class EscalationEngine
      *
      * @param  EnforcementWriter  $writer  The enforcement writer used to issue bans and restrictions.
      * @param  AuditLogger  $audit  The audit logger used to log escalation actions.
+     * @return void
      */
     public function __construct(
         private readonly EnforcementWriter $writer,
@@ -33,21 +29,12 @@ final class EscalationEngine
     /**
      * Evaluate the account for automatic moderation escalations.
      *
-     * This method checks if automatic escalation is enabled in the configuration. If enabled,
-     * it locks the account record for update and evaluates the accumulated strike points against
-     * configured thresholds. If a threshold is met, it issues the corresponding ban or restriction.
-     *
      * @param  Model  $account  The account model to evaluate for escalation.
      */
     public function evaluate(Model $account): void
     {
         // Check if automatic escalation is enabled in the configuration
-        if (
-            ! config(
-                'exile.escalation.enabled',
-                true
-            )
-        ) {
+        if (! config('exile.escalation.enabled', true)) {
             return;
         }
 
@@ -68,9 +55,6 @@ final class EscalationEngine
 
     /**
      * Evaluate the account for escalation while holding a database lock.
-     *
-     * This method retrieves the accumulated strike points for the account and checks against
-     * configured thresholds. If a threshold is met, it issues the corresponding ban or restriction.
      *
      * @param  Model  $account  The account model to evaluate for escalation.
      */
@@ -135,25 +119,12 @@ final class EscalationEngine
             );
 
             // If the action is not recognized (not 'ban' or 'restriction'), skip to the next threshold
-            if (
-                ! in_array(
-                    $action,
-                    ['ban', 'restriction'],
-                    true
-                )
-            ) {
+            if (! in_array($action, ['ban', 'restriction'], true)) {
                 continue;
             }
 
             // Attempt to reserve the threshold for this account to prevent duplicate escalations
-            if (
-                ! $this->reserveThreshold(
-                    $account,
-                    $requiredPoints,
-                    $action,
-                    $points
-                )
-            ) {
+            if (! $this->reserveThreshold($account, $requiredPoints, $action, $points)) {
                 continue;
             }
 
@@ -233,10 +204,6 @@ final class EscalationEngine
     /**
      * Reserve a threshold for the account to prevent duplicate escalations.
      *
-     * This method attempts to insert a record into the applied escalations table to indicate that
-     * the specified threshold has been applied for the account. If the insertion is successful,
-     * it returns true; otherwise, it returns false, indicating that the threshold has already been applied.
-     *
      * @param  Model  $account  The account model for which the threshold is being reserved.
      * @param  int  $thresholdPoints  The number of points required for the threshold.
      * @param  string  $action  The action associated with the threshold (e.g., 'ban' or 'restriction').
@@ -280,9 +247,6 @@ final class EscalationEngine
 
     /**
      * Calculate the expiration time based on the provided duration string.
-     *
-     * This method attempts to create a DateInterval from the provided duration string and adds it
-     * to the current time. If the duration string is empty or invalid, it returns null.
      *
      * @param  string  $duration  The duration string (e.g., 'P1D' for 1 day).
      * @return DateTimeInterface|null Returns the calculated expiration time or null if invalid.
