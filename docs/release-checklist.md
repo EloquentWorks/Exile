@@ -83,7 +83,6 @@ composer install \
 
 Smoke-test clean applications for:
 
-- Laravel 11.15 / PHP 8.2
 - Laravel 12 / PHP 8.2
 - Laravel 13 / PHP 8.3
 
