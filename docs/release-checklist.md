@@ -6,14 +6,7 @@ This checklist prepares Laravel Exile `v1.1.0`.
 
 ### Align README, Composer, and CI
 
-`composer.json` supports Laravel 11.15, 12, and 13. The current GitHub Actions matrix tests Laravel 12 and 13 only.
-
-Before release, either:
-
-- add Laravel 11 to CI, or
-- remove Laravel 11 from Composer support and documentation
-
-Adding the missing CI job is recommended.
+`composer.json` supports Laravel 12 and 13. The current GitHub Actions matrix tests Laravel 12 and 13 only.
 
 ### Correct the appeal action configuration
 
