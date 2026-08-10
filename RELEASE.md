@@ -2,7 +2,7 @@
 
 This document describes the standard release process for this Laravel project.
 
-The goal is to make releases predictable, reproducible, well-tested, and easy for users to upgrade.
+The goal is to make releases predictable, reproducible, well-tested, and easy for users to understand and upgrade.
 
 ## 📌 Versioning
 
@@ -43,7 +43,7 @@ Before preparing a release:
 2. Review open pull requests that may need to be included.
 3. Review open issues that may block the release.
 4. Confirm the intended version number.
-5. Review the changelog and upgrade documentation.
+5. Review upgrade documentation when applicable.
 6. Confirm supported Laravel and PHP versions.
 7. Run the full quality suite.
 
@@ -109,7 +109,7 @@ If the release includes database changes:
 - Test rollback behavior
 - Consider SQLite, MySQL/MariaDB, and PostgreSQL differences
 
-Document any required migration commands.
+Document any required migration commands in the README, upgrade guide, or GitHub release notes.
 
 ## ⚙️ Configuration Changes
 
@@ -157,7 +157,7 @@ Confirm that:
 - Transactions cover critical state changes
 - Security documentation is current
 
-If the release fixes a vulnerability, coordinate disclosure according to [SECURITY.md](../SECURITY.md).
+If the release fixes a vulnerability, coordinate disclosure according to [SECURITY.md](SECURITY.md).
 
 ## 📚 Documentation Review
 
@@ -166,7 +166,6 @@ Before release, verify that documentation reflects the code.
 Review:
 
 - `README.md`
-- `CHANGELOG.md`
 - `SECURITY.md`
 - `CONTRIBUTING.md`
 - `UPGRADING.md`, when present
@@ -181,43 +180,41 @@ Review:
 
 Examples should match actual method signatures and configuration keys.
 
-## 📝 Changelog
+## 📝 Release Notes
 
-Update `CHANGELOG.md` before tagging the release.
+This project does not require a changelog.
 
-A release entry should explain meaningful user-facing changes.
+Instead, document each release in the **GitHub Release notes** for its tag.
+
+Release notes should explain meaningful user-facing changes and may use sections such as:
+
+```text
+What's New
+Changed
+Fixed
+Security
+Upgrade Notes
+Breaking Changes
+```
 
 Example:
 
 ```markdown
-## 1.4.0 - 2026-08-10
-
-### Added
+## What's New
 
 - Added device naming support.
 - Added configurable expiration policies.
 
-### Changed
+## Changed
 
 - Improved trusted-device token rotation.
 
-### Fixed
+## Fixed
 
 - Fixed revocation when multiple sessions are active.
 ```
 
-Useful categories include:
-
-```text
-Added
-Changed
-Deprecated
-Removed
-Fixed
-Security
-```
-
-Avoid filling the changelog with internal refactors unless they materially affect users.
+Avoid using a raw commit log as release notes. Focus on changes that matter to users.
 
 ## ⚠️ Breaking Changes
 
@@ -235,6 +232,13 @@ Before a breaking release:
 - Consider deprecating behavior before removal when practical
 
 Breaking changes should normally be released in a new major version.
+
+Upgrade guidance may live in:
+
+- `UPGRADING.md`
+- The README
+- Dedicated documentation
+- GitHub release notes
 
 ## 🔢 Update the Version
 
@@ -307,7 +311,7 @@ Never reuse or silently move a published release tag.
 
 Create a GitHub Release from the new tag.
 
-The release should include:
+The GitHub Release acts as the project's version history and should include:
 
 - Version number
 - Short summary
@@ -316,7 +320,6 @@ The release should include:
 - Breaking changes
 - Upgrade instructions
 - Security notes when applicable
-- Link or summary of the changelog
 
 Avoid pasting a raw commit log as release notes.
 
@@ -366,7 +369,7 @@ If a release contains a defect:
 
 1. Fix the issue on the default branch.
 2. Add a regression test.
-3. Update the changelog.
+3. Prepare new GitHub release notes.
 4. Create a new patch release.
 
 Example:
@@ -388,7 +391,7 @@ Automation may safely handle:
 - Checking formatting
 - Composer validation
 - Building release artifacts
-- Creating release notes
+- Creating draft release notes
 - Publishing documentation
 
 Release automation should not bypass required review or quality checks.
