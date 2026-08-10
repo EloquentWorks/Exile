@@ -155,7 +155,6 @@ If this is a security release:
 - [ ] Update `README.md`
 - [ ] Update `SECURITY.md` if needed
 - [ ] Update `CONTRIBUTING.md` if needed
-- [ ] Update `UPGRADING.md` if needed
 - [ ] Update installation instructions
 - [ ] Update configuration examples
 - [ ] Update public API examples
