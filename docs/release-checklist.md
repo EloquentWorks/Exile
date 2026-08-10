@@ -4,8 +4,6 @@ Use this checklist when preparing a Laravel project or package release.
 
 Copy it into a release issue or pull request when useful.
 
----
-
 ## 🧭 Release Planning
 
 - [ ] Confirm the intended version number
