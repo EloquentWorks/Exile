@@ -34,8 +34,11 @@ return new class extends Migration
             $table->json('metadata')->nullable();
 
             // Create timestamp columns for tracking the first and last time the device fingerprint was seen
-            $table->timestamp('first_seen_at');
-            $table->timestamp('last_seen_at');
+            $table->timestamp('first_seen_at')->useCurrent();
+
+            $table->timestamp('last_seen_at')
+                ->useCurrent()
+                ->useCurrentOnUpdate();
 
             // Create timestamp columns for tracking when the record was created and last updated
             $table->timestamps();
