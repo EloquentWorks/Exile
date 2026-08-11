@@ -18,8 +18,16 @@ return new class extends Migration
             // Create an auto-incrementing primary key column named 'id'
             $table->id();
 
-            // Create polymorphic relationship columns for the 'fingerprintable' entity
-            $table->morphs('fingerprintable');
+            // Create a string column for storing the type of the fingerprintable model (e.g., User, Admin, etc.)
+            $table->string('fingerprintable_type');
+            $table->unsignedBigInteger('fingerprintable_id');
+
+            // Create an index on the combination of 'fingerprintable_type' and 'fingerprintable_id' for
+            // efficient querying of device fingerprints associated with specific models
+            $table->index(
+                ['fingerprintable_type', 'fingerprintable_id'],
+                'exile_fingerprintable_idx'
+            );
 
             // Create a char column for storing the fingerprint hash with a length of 64 characters
             $table->char('fingerprint_hash', 64);
